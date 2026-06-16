@@ -2,6 +2,7 @@ package com.sandustnetwork.fineclaim.claim.protection;
 
 import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
 import com.sandustnetwork.fineclaim.claim.util.ClaimChunkMapper;
+import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -25,7 +26,7 @@ public final class ClaimProtectionListener implements Listener {
         ProtectionResult result = protectionCheck.checkBuild(chunk, event.getPlayer());
         if (!result.isAllowed()) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(result.message());
+            FineClaimMessages.sendError(event.getPlayer(), result.message());
         }
     }
 
@@ -35,7 +36,7 @@ public final class ClaimProtectionListener implements Listener {
         ProtectionResult result = protectionCheck.checkBuild(chunk, event.getPlayer());
         if (!result.isAllowed()) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(result.message());
+            FineClaimMessages.sendError(event.getPlayer(), result.message());
         }
     }
 
@@ -54,7 +55,7 @@ public final class ClaimProtectionListener implements Listener {
         ProtectionResult result = protectionCheck.checkInteract(chunk, event.getPlayer());
         if (!result.isAllowed()) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(result.message());
+            FineClaimMessages.sendError(event.getPlayer(), result.message());
         }
     }
 }

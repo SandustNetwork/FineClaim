@@ -11,8 +11,6 @@ import com.sandustnetwork.fineclaim.claim.protection.ProtectionCheck;
 import com.sandustnetwork.fineclaim.claim.storage.ClaimRepository;
 import com.sandustnetwork.fineclaim.claim.storage.file.FileClaimRepository;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FineClaimPlugin extends JavaPlugin {
@@ -33,11 +31,11 @@ public final class FineClaimPlugin extends JavaPlugin {
         claimService = new ClaimService(repository);
         PermissionChecker permissionChecker = new PermissionChecker();
 
-        registerCommand("claim", new ClaimCommand(claimService, permissionChecker));
-        registerCommand("unclaim", new UnclaimCommand(claimService, permissionChecker));
-        registerCommand("trust", new TrustCommand(claimService, permissionChecker));
-        registerCommand("untrust", new UntrustCommand(claimService, permissionChecker));
-        registerCommand("claiminfo", new ClaimInfoCommand(claimService, permissionChecker));
+        registerCommand("claim", "Claim the chunk you are standing in", new ClaimCommand(claimService, permissionChecker));
+        registerCommand("unclaim", "Remove your claim from the current chunk", new UnclaimCommand(claimService, permissionChecker));
+        registerCommand("trust", "Trust a player to build in your current chunk claim", new TrustCommand(claimService, permissionChecker));
+        registerCommand("untrust", "Remove build trust from a player in your current chunk claim", new UntrustCommand(claimService, permissionChecker));
+        registerCommand("claiminfo", "Show claim information for the current chunk", new ClaimInfoCommand(claimService, permissionChecker));
 
         ProtectionCheck protectionCheck = new ProtectionCheck(claimService, permissionChecker);
         getServer().getPluginManager().registerEvents(new ClaimProtectionListener(protectionCheck), this);
@@ -48,15 +46,5 @@ public final class FineClaimPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("FineClaim disabled");
-    }
-
-    private void registerCommand(String name, CommandExecutor executor) {
-        PluginCommand command = getCommand(name);
-        if (command == null) {
-            String message = "Command '" + name + "' is not defined in paper-plugin.yml";
-            getLogger().severe(message);
-            throw new IllegalStateException(message);
-        }
-        command.setExecutor(executor);
     }
 }
