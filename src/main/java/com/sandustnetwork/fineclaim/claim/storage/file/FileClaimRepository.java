@@ -84,7 +84,6 @@ public final class FileClaimRepository implements ClaimRepository {
     @Override
     public List<Claim> findOverlapping(ClaimBox box, ClaimId excludeId) {
         Objects.requireNonNull(box, "box");
-        Objects.requireNonNull(excludeId, "excludeId");
 
         Set<ClaimId> candidates = new HashSet<>();
         for (ChunkKey chunkKey : box.intersectingChunks()) {

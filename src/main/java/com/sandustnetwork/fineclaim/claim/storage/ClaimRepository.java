@@ -18,6 +18,7 @@ public interface ClaimRepository {
 
     Optional<Claim> findById(ClaimId claimId);
 
+    /** @param excludeId claim to skip (e.g. when resizing); {@code null} to check all claims */
     List<Claim> findOverlapping(ClaimBox box, ClaimId excludeId);
 
     void save(Claim claim);

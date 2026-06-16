@@ -170,7 +170,7 @@ public final class ClaimCommand implements BasicCommand {
         }
 
         wandManager.endSession(player);
-        FineClaimMessages.sendInfo(player, "Claim selection cancelled.");
+        FineClaimMessages.sendCancelled(player, "Claim selection cancelled.");
     }
 
     private void handleResize(Player player, String[] args) {
@@ -248,7 +248,7 @@ public final class ClaimCommand implements BasicCommand {
         }
 
         wandManager.endSession(player);
-        FineClaimMessages.sendInfo(player, "Claim resize cancelled.");
+        FineClaimMessages.sendCancelled(player, "Claim resize cancelled.");
     }
 
     static void sendOperationResult(Player player, ClaimOperationResult result) {

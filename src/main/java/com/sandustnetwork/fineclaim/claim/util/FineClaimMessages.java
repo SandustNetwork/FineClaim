@@ -22,7 +22,17 @@ public final class FineClaimMessages {
             .withZone(ZoneId.systemDefault());
     private static final int STRIKETHROUGH_SEPARATOR_LENGTH = 28;
     private static final String STRIKETHROUGH_SEPARATOR = " ".repeat(STRIKETHROUGH_SEPARATOR_LENGTH);
-    private static final String STRIKETHROUGH_TITLE_SIDE = " ".repeat(6);
+
+    private static final String ICON_SUCCESS =
+            "<dark_gray>[</dark_gray><green><bold>✔</bold></green><dark_gray>]</dark_gray>";
+    private static final String ICON_ERROR =
+            "<dark_gray>[</dark_gray><red><bold>✘</bold></red><dark_gray>]</dark_gray>";
+    private static final String ICON_WARNING =
+            "<dark_gray>[</dark_gray><yellow><bold>!</bold></yellow><dark_gray>]</dark_gray>";
+    private static final String ICON_INFO =
+            "<dark_gray>[</dark_gray><aqua><bold>i</bold></aqua><dark_gray>]</dark_gray>";
+    private static final String ICON_CANCEL =
+            "<dark_gray>[</dark_gray><gray><bold>↩</bold></gray><dark_gray>]</dark_gray>";
 
     private FineClaimMessages() {
     }
@@ -31,7 +41,7 @@ public final class FineClaimMessages {
         Objects.requireNonNull(sender, "sender");
         Objects.requireNonNull(message, "message");
         sender.sendMessage(MINI_MESSAGE.deserialize(
-                "<green><bold>✔</bold></green> <gray><message>",
+                ICON_SUCCESS + " <white><message>",
                 Placeholder.unparsed("message", message)
         ));
     }
@@ -40,7 +50,7 @@ public final class FineClaimMessages {
         Objects.requireNonNull(sender, "sender");
         Objects.requireNonNull(message, "message");
         sender.sendMessage(MINI_MESSAGE.deserialize(
-                "<red><bold>✘</bold></red> <gray><message>",
+                ICON_ERROR + " <white><message>",
                 Placeholder.unparsed("message", message)
         ));
     }
@@ -49,7 +59,7 @@ public final class FineClaimMessages {
         Objects.requireNonNull(sender, "sender");
         Objects.requireNonNull(message, "message");
         sender.sendMessage(MINI_MESSAGE.deserialize(
-                "<gold><bold>!</bold></gold> <yellow><message>",
+                ICON_WARNING + " <yellow><message>",
                 Placeholder.unparsed("message", message)
         ));
     }
@@ -58,7 +68,16 @@ public final class FineClaimMessages {
         Objects.requireNonNull(sender, "sender");
         Objects.requireNonNull(message, "message");
         sender.sendMessage(MINI_MESSAGE.deserialize(
-                "<aqua><bold>FineClaim</bold></aqua> <dark_gray>»</dark_gray> <white><message>",
+                ICON_INFO + " <gray><message>",
+                Placeholder.unparsed("message", message)
+        ));
+    }
+
+    public static void sendCancelled(CommandSender sender, String message) {
+        Objects.requireNonNull(sender, "sender");
+        Objects.requireNonNull(message, "message");
+        sender.sendMessage(MINI_MESSAGE.deserialize(
+                ICON_CANCEL + " <gray><message>",
                 Placeholder.unparsed("message", message)
         ));
     }
@@ -77,8 +96,7 @@ public final class FineClaimMessages {
 
         sendStrikethroughSeparator(player);
         player.sendMessage(MINI_MESSAGE.deserialize(
-                "<dark_gray><st><line></st></dark_gray> <gold><bold>Claim Information</bold></gold> <dark_gray><st><line></st></dark_gray>",
-                Placeholder.unparsed("line", STRIKETHROUGH_TITLE_SIDE)
+                ICON_INFO + " <gold><bold>Claim Information</bold></gold>"
         ));
         sendStrikethroughSeparator(player);
         sendClaimInfoRow(player, "Owner", ownerName);
@@ -105,7 +123,7 @@ public final class FineClaimMessages {
 
     private static void sendClaimInfoRow(Player player, String label, String value) {
         player.sendMessage(MINI_MESSAGE.deserialize(
-                " <aqua><label></aqua> <dark_gray>»</dark_gray> <white><value>",
+                " <dark_gray>▸</dark_gray> <aqua><label></aqua> <dark_gray>»</dark_gray> <white><value>",
                 Placeholder.unparsed("label", label),
                 Placeholder.unparsed("value", value)
         ));
