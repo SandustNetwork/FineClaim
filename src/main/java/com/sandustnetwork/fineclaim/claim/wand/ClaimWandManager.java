@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class ClaimWandManager implements Listener {
 
+    private static final Material WAND_MATERIAL = Material.BRICK;
+
     public enum Mode {
         CREATE,
         RESIZE
@@ -52,7 +54,7 @@ public final class ClaimWandManager implements Listener {
         endSession(player);
         sessions.put(player.getUniqueId(), new WandSession(Mode.CREATE, null, null, null));
         giveWand(player);
-        FineClaimMessages.sendInfo(player, "Claim Wand equipped. Left-click a block for point A, right-click for point B.");
+        FineClaimMessages.sendInfo(player, "Claim tool equipped. Left-click (break) a block for point A, right-click for point B.");
         FineClaimMessages.sendInfo(player, "Use /claim confirm or /claim cancel when finished.");
     }
 
@@ -122,7 +124,7 @@ public final class ClaimWandManager implements Listener {
     }
 
     public boolean isClaimWand(ItemStack itemStack) {
-        if (itemStack == null || itemStack.getType() != Material.STICK) {
+        if (itemStack == null || itemStack.getType() != WAND_MATERIAL) {
             return false;
         }
         ItemMeta meta = itemStack.getItemMeta();
@@ -140,9 +142,9 @@ public final class ClaimWandManager implements Listener {
 
     private void giveWand(Player player) {
         revokeWand(player);
-        ItemStack wand = new ItemStack(Material.STICK);
+        ItemStack wand = new ItemStack(WAND_MATERIAL);
         ItemMeta meta = wand.getItemMeta();
-        meta.displayName(Component.text("Claim Wand", NamedTextColor.AQUA)
+        meta.displayName(Component.text("Claim Tool", NamedTextColor.AQUA)
                 .decoration(TextDecoration.ITALIC, false));
         meta.addEnchant(Enchantment.UNBREAKING, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);

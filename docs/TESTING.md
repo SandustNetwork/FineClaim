@@ -38,7 +38,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 **Expected**
 
 - Message explains Claim Wand usage.
-- **Claim Wand** (stick with glow) appears in inventory.
+- **Claim Tool** (brick item with glow) appears in inventory.
 - Location is **not** claimed yet.
 
 ## 3. Select points A and B with the wand
@@ -52,7 +52,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 **Expected**
 
 - Messages confirm point A and point B coordinates.
-- BlockDisplay markers appear at the box corners.
+- Particle markers appear at the 8 box corners, with `END_ROD` lines connecting the edges.
 - `/claiminfo` still reports location is not claimed until confirm.
 
 ## 4. Cancel selection with `/claim cancel`

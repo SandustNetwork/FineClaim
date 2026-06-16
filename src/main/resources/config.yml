@@ -1,6 +1,15 @@
 MaxBlocksPerMember: 4096
 MaxBlocksPerServer: 2500000
 PreviewDisplaySeconds: 120
-BorderBlock: LIGHT_BLUE_STAINED_GLASS
+CornerParticle: END_ROD
+BorderColors:
+  - "#00B4FC"
+  - "#6EE7FF"
+  - "#A78BFA"
+  - "#F472B6"
+  - "#34D399"
+ParticleSpacing: 0.75
+MaxParticlesPerEdge: 64
+BorderRefreshTicks: 10
 MinClaimHeight: -64
 MaxClaimHeight: 320

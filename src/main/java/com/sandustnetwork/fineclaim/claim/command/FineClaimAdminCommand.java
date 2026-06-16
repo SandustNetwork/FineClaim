@@ -10,11 +10,10 @@ import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 public final class FineClaimAdminCommand implements BasicCommand {
@@ -63,21 +62,21 @@ public final class FineClaimAdminCommand implements BasicCommand {
     }
 
     @Override
-    public Collection<String> suggest(CommandSourceStack source, String[] args) {
-        if (args.length == 1) {
-            return filterSuggestions(List.of("reload"), args[0]);
-        }
-        return List.of();
+    public @Nullable String permission() {
+        return FineClaimPermission.ADMIN_RELOAD;
     }
 
-    private static List<String> filterSuggestions(List<String> options, String prefix) {
-        String normalizedPrefix = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
-        List<String> matches = new ArrayList<>();
-        for (String option : options) {
-            if (option.toLowerCase(Locale.ROOT).startsWith(normalizedPrefix)) {
-                matches.add(option);
-            }
+    @Override
+    public Collection<String> suggest(CommandSourceStack source, String[] args) {
+        if (!source.getSender().hasPermission(FineClaimPermission.ADMIN_RELOAD)) {
+            return List.of();
         }
-        return matches;
+        if (args.length == 0) {
+            return List.of("reload");
+        }
+        if (args.length == 1) {
+            return CommandSuggestions.filter(List.of("reload"), args[0]);
+        }
+        return List.of();
     }
 }

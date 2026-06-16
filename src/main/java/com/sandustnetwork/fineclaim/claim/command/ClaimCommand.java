@@ -14,6 +14,7 @@ import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,6 +79,11 @@ public final class ClaimCommand implements BasicCommand {
     }
 
     @Override
+    public @Nullable String permission() {
+        return FineClaimPermission.COMMAND_CLAIM;
+    }
+
+    @Override
     public Collection<String> suggest(CommandSourceStack source, String[] args) {
         if (!(source.getSender() instanceof Player player)) {
             return List.of();
@@ -86,13 +92,49 @@ public final class ClaimCommand implements BasicCommand {
             return List.of();
         }
 
-        if (args.length == 1) {
-            return filterSuggestions(ROOT_SUBCOMMANDS, args[0]);
+        if (args.length == 0) {
+            return contextualRootSuggestions(player);
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("resize")) {
-            return filterSuggestions(RESIZE_SUBCOMMANDS, args[1]);
+        if (args.length == 1) {
+            if (args[0].equalsIgnoreCase("resize")) {
+                return RESIZE_SUBCOMMANDS;
+            }
+            return CommandSuggestions.filter(contextualRootSuggestions(player), args[0]);
+        }
+        if (args.length >= 2 && args[0].equalsIgnoreCase("resize")) {
+            return CommandSuggestions.filter(RESIZE_SUBCOMMANDS, args[args.length - 1]);
         }
         return List.of();
+    }
+
+    private List<String> contextualRootSuggestions(Player player) {
+        List<String> suggestions = new ArrayList<>();
+        if (wandManager.getSession(player).isPresent()) {
+            suggestions.add("confirm");
+            suggestions.add("cancel");
+        }
+        if (isStandingInOwnedClaim(player)) {
+            suggestions.add("resize");
+        }
+        if (suggestions.isEmpty()) {
+            return ROOT_SUBCOMMANDS;
+        }
+        for (String option : ROOT_SUBCOMMANDS) {
+            if (!suggestions.contains(option)) {
+                suggestions.add(option);
+            }
+        }
+        return suggestions;
+    }
+
+    private boolean isStandingInOwnedClaim(Player player) {
+        var location = ClaimLocationMapper.fromLocation(player.getLocation());
+        return claimService.getClaimAtBlock(
+                location.worldName(),
+                location.x(),
+                location.y(),
+                location.z()
+        ).map(claim -> claim.isOwner(player.getUniqueId())).orElse(false);
     }
 
     private void handleConfirm(Player player) {
@@ -215,16 +257,5 @@ public final class ClaimCommand implements BasicCommand {
         } else {
             FineClaimMessages.sendError(player, result.message());
         }
-    }
-
-    private static List<String> filterSuggestions(List<String> options, String prefix) {
-        String normalizedPrefix = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
-        List<String> matches = new ArrayList<>();
-        for (String option : options) {
-            if (option.toLowerCase(Locale.ROOT).startsWith(normalizedPrefix)) {
-                matches.add(option);
-            }
-        }
-        return matches;
     }
 }

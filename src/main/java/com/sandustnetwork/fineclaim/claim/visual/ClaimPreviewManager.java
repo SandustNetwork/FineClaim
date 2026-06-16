@@ -4,7 +4,7 @@ import com.sandustnetwork.fineclaim.claim.config.ClaimSettings;
 import com.sandustnetwork.fineclaim.claim.domain.Claim;
 import com.sandustnetwork.fineclaim.claim.domain.ClaimBox;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
-import org.bukkit.entity.BlockDisplay;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -12,7 +12,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +31,7 @@ public final class ClaimPreviewManager implements Listener {
         this.borderDisplay = Objects.requireNonNull(borderDisplay, "borderDisplay");
         this.settings = Objects.requireNonNull(settings, "settings");
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        LegacyBorderCleanup.removeAll(plugin);
     }
 
     public void updateSettings(ClaimSettings settings) {
@@ -42,76 +42,94 @@ public final class ClaimPreviewManager implements Listener {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(box, "box");
 
-        cancelPreview(player);
-        borderDisplay.showBox(player, box, settings.borderBlock(), displays -> {
-            PreviewSession session = new PreviewSession(box, displays);
-            previewSessions.put(player.getUniqueId(), session);
-            scheduleExpiry(player);
-        });
+        stopPreview(player);
+        PreviewSession session = startAnimation(player, box);
+        previewSessions.put(player.getUniqueId(), session);
     }
 
     public Optional<ClaimBox> getPreviewBox(Player player) {
         Objects.requireNonNull(player, "player");
         PreviewSession session = previewSessions.get(player.getUniqueId());
-        if (session == null) {
+        if (session == null || !session.isActive()) {
             return Optional.empty();
         }
         return Optional.ofNullable(session.box());
     }
 
     public void cancelPreview(Player player) {
-        Objects.requireNonNull(player, "player");
-        PreviewSession session = previewSessions.remove(player.getUniqueId());
-        if (session != null) {
-            borderDisplay.removeDisplays(player, session.displays());
-        }
+        stopPreview(player);
     }
 
     public void showClaimBorder(Player player, Claim claim) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(claim, "claim");
 
-        cancelPreview(player);
-        borderDisplay.showBox(player, claim.getBox(), settings.borderBlock(), displays -> {
-            PreviewSession session = new PreviewSession(null, displays);
-            previewSessions.put(player.getUniqueId(), session);
-            scheduleExpiry(player);
-            FineClaimMessages.sendInfo(player, "Claim border shown.");
-        });
+        stopPreview(player);
+        PreviewSession session = startAnimation(player, claim.getBox());
+        previewSessions.put(player.getUniqueId(), session);
+        FineClaimMessages.sendInfo(player, "Claim border shown.");
     }
 
     public void cleanupAll() {
         for (UUID playerId : List.copyOf(previewSessions.keySet())) {
             Player player = plugin.getServer().getPlayer(playerId);
             if (player != null) {
-                cancelPreview(player);
+                stopPreview(player);
             } else {
                 PreviewSession session = previewSessions.remove(playerId);
                 if (session != null) {
-                    for (BlockDisplay display : session.displays()) {
-                        if (display.isValid()) {
-                            display.remove();
-                        }
-                    }
+                    session.deactivate();
                 }
             }
         }
+        LegacyBorderCleanup.removeAll(plugin);
         HandlerList.unregisterAll(this);
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        cancelPreview(event.getPlayer());
+        stopPreview(event.getPlayer());
     }
 
-    private void scheduleExpiry(Player player) {
-        long delayTicks = settings.previewDisplaySeconds() * 20L;
-        player.getScheduler().runDelayed(plugin, scheduledTask -> cancelPreview(player), null, delayTicks);
+    private PreviewSession startAnimation(Player player, ClaimBox box) {
+        ClaimSettings activeSettings = settings;
+        PreviewSession[] sessionHolder = new PreviewSession[1];
+
+        ScheduledTask animationTask = player.getScheduler().runAtFixedRate(
+                plugin,
+                task -> {
+                    PreviewSession session = sessionHolder[0];
+                    if (session == null || !session.isActive()) {
+                        return;
+                    }
+                    borderDisplay.drawBox(player, box, activeSettings, session);
+                },
+                () -> {},
+                1L,
+                activeSettings.borderRefreshTicks()
+        );
+
+        ScheduledTask expiryTask = player.getScheduler().runDelayed(
+                plugin,
+                scheduledTask -> stopPreview(player),
+                null,
+                activeSettings.previewDisplaySeconds() * 20L
+        );
+
+        PreviewSession session = new PreviewSession(box, animationTask, expiryTask);
+        sessionHolder[0] = session;
+        borderDisplay.drawBox(player, box, activeSettings, session);
+        return session;
     }
 
-    private record PreviewSession(ClaimBox box, List<BlockDisplay> displays) {
-        private PreviewSession {
-            displays = List.copyOf(new ArrayList<>(displays));
+    private void stopPreview(Player player) {
+        Objects.requireNonNull(player, "player");
+        PreviewSession session = previewSessions.remove(player.getUniqueId());
+        if (session == null) {
+            return;
         }
+
+        session.deactivate();
+        LegacyBorderCleanup.removeInBox(plugin, player, session.box());
     }
 }
