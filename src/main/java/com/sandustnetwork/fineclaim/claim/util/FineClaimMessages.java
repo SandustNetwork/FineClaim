@@ -17,7 +17,7 @@ public final class FineClaimMessages {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     private static final DateTimeFormatter CREATED_AT_FORMAT = DateTimeFormatter
-            .ofPattern("dd MMM yyyy, HH:mm")
+            .ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
 
     private FineClaimMessages() {
@@ -59,21 +59,35 @@ public final class FineClaimMessages {
         ));
     }
 
-    public static void sendSectionHeader(Player player, String title) {
+    public static void sendClaimInfoPanel(
+            Player player,
+            String ownerName,
+            String worldName,
+            int chunkX,
+            int chunkZ,
+            int trustedCount,
+            Instant createdAt
+    ) {
         Objects.requireNonNull(player, "player");
-        Objects.requireNonNull(title, "title");
+        Objects.requireNonNull(ownerName, "ownerName");
+        Objects.requireNonNull(worldName, "worldName");
+        Objects.requireNonNull(createdAt, "createdAt");
+
+        player.sendMessage(MINI_MESSAGE.deserialize("<dark_gray>  ─────────────────────────────</dark_gray>"));
         player.sendMessage(MINI_MESSAGE.deserialize(
-                "<gold><bold><title></bold></gold>",
-                Placeholder.unparsed("title", title)
+                "<dark_gray>  ┃ </dark_gray><gold><bold>Claim Information</bold></gold>"
         ));
+        player.sendMessage(MINI_MESSAGE.deserialize("<dark_gray>  ─────────────────────────────</dark_gray>"));
+        sendClaimInfoRow(player, "Owner", ownerName);
+        sendClaimInfoRow(player, "Chunk", worldName + " (" + chunkX + ", " + chunkZ + ")");
+        sendClaimInfoRow(player, "Trusted", formatTrustedCount(trustedCount));
+        sendClaimInfoRow(player, "Created", formatCreatedAt(createdAt));
+        player.sendMessage(MINI_MESSAGE.deserialize("<dark_gray>  ─────────────────────────────</dark_gray>"));
     }
 
-    public static void sendLabeled(Player player, String label, String value) {
-        Objects.requireNonNull(player, "player");
-        Objects.requireNonNull(label, "label");
-        Objects.requireNonNull(value, "value");
+    private static void sendClaimInfoRow(Player player, String label, String value) {
         player.sendMessage(MINI_MESSAGE.deserialize(
-                "<gray><label>:</gray> <white><value>",
+                "<dark_gray>  ┃ </dark_gray><aqua><label></aqua> <dark_gray>»</dark_gray> <white><value>",
                 Placeholder.unparsed("label", label),
                 Placeholder.unparsed("value", value)
         ));
@@ -94,8 +108,10 @@ public final class FineClaimMessages {
         return name;
     }
 
-    public static String formatPlayerId(UUID playerId) {
-        Objects.requireNonNull(playerId, "playerId");
-        return playerId.toString();
+    private static String formatTrustedCount(int trustedCount) {
+        if (trustedCount == 1) {
+            return "1 player";
+        }
+        return trustedCount + " players";
     }
 }

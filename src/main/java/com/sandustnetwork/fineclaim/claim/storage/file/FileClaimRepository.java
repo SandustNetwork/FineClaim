@@ -67,6 +67,13 @@ public final class FileClaimRepository implements ClaimRepository {
         flush();
     }
 
+    public int reloadFromFile() {
+        Map<ClaimChunk, Claim> loadedClaims = loadClaims();
+        claims.clear();
+        claims.putAll(loadedClaims);
+        return loadedClaims.size();
+    }
+
     private Map<ClaimChunk, Claim> loadClaims() {
         try {
             Map<ClaimChunk, Claim> loadedClaims = codec.read(claimsFile);

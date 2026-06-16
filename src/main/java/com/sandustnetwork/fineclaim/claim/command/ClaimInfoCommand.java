@@ -14,7 +14,6 @@ import org.bukkit.entity.Player;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 public final class ClaimInfoCommand implements BasicCommand {
 
@@ -52,15 +51,15 @@ public final class ClaimInfoCommand implements BasicCommand {
             return;
         }
 
-        UUID ownerId = claim.getOwner();
         ClaimChunk claimChunk = claim.getChunk();
-        String chunkCoordinates = claimChunk.worldName() + " [" + claimChunk.chunkX() + ", " + claimChunk.chunkZ() + "]";
-
-        FineClaimMessages.sendSectionHeader(player, "Claim Info");
-        FineClaimMessages.sendLabeled(player, "Owner", FineClaimMessages.resolvePlayerName(ownerId));
-        FineClaimMessages.sendLabeled(player, "Owner ID", FineClaimMessages.formatPlayerId(ownerId));
-        FineClaimMessages.sendLabeled(player, "Chunk", chunkCoordinates);
-        FineClaimMessages.sendLabeled(player, "Trusted players", String.valueOf(claim.getTrustedPlayers().size()));
-        FineClaimMessages.sendLabeled(player, "Created", FineClaimMessages.formatCreatedAt(claim.getCreatedAt()));
+        FineClaimMessages.sendClaimInfoPanel(
+                player,
+                FineClaimMessages.resolvePlayerName(claim.getOwner()),
+                claimChunk.worldName(),
+                claimChunk.chunkX(),
+                claimChunk.chunkZ(),
+                claim.getTrustedPlayers().size(),
+                claim.getCreatedAt()
+        );
     }
 }

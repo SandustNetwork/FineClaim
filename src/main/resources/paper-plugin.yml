@@ -26,3 +26,6 @@ permissions:
   fineclaim.admin.info:
     description: View any claim information
     default: op
+  fineclaim.admin.reload:
+    description: Reload FineClaim config and claims from disk
+    default: op

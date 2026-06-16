@@ -9,6 +9,7 @@ public final class FineClaimPermission {
     public static final String COMMAND_INFO = "fineclaim.command.info";
     public static final String ADMIN_BYPASS = "fineclaim.admin.bypass";
     public static final String ADMIN_INFO = "fineclaim.admin.info";
+    public static final String ADMIN_RELOAD = "fineclaim.admin.reload";
 
     private FineClaimPermission() {
     }
