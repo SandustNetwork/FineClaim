@@ -19,6 +19,9 @@ public final class FineClaimMessages {
     private static final DateTimeFormatter CREATED_AT_FORMAT = DateTimeFormatter
             .ofPattern("dd/MM/yyyy HH:mm")
             .withZone(ZoneId.systemDefault());
+    private static final int STRIKETHROUGH_SEPARATOR_LENGTH = 28;
+    private static final String STRIKETHROUGH_SEPARATOR = " ".repeat(STRIKETHROUGH_SEPARATOR_LENGTH);
+    private static final String STRIKETHROUGH_TITLE_SIDE = " ".repeat(6);
 
     private FineClaimMessages() {
     }
@@ -73,21 +76,29 @@ public final class FineClaimMessages {
         Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(createdAt, "createdAt");
 
-        player.sendMessage(MINI_MESSAGE.deserialize("<dark_gray>  ─────────────────────────────</dark_gray>"));
+        sendStrikethroughSeparator(player);
         player.sendMessage(MINI_MESSAGE.deserialize(
-                "<dark_gray>  ┃ </dark_gray><gold><bold>Claim Information</bold></gold>"
+                "<dark_gray><st><line></st></dark_gray> <gold><bold>Claim Information</bold></gold> <dark_gray><st><line></st></dark_gray>",
+                Placeholder.unparsed("line", STRIKETHROUGH_TITLE_SIDE)
         ));
-        player.sendMessage(MINI_MESSAGE.deserialize("<dark_gray>  ─────────────────────────────</dark_gray>"));
+        sendStrikethroughSeparator(player);
         sendClaimInfoRow(player, "Owner", ownerName);
         sendClaimInfoRow(player, "Chunk", worldName + " (" + chunkX + ", " + chunkZ + ")");
         sendClaimInfoRow(player, "Trusted", formatTrustedCount(trustedCount));
         sendClaimInfoRow(player, "Created", formatCreatedAt(createdAt));
-        player.sendMessage(MINI_MESSAGE.deserialize("<dark_gray>  ─────────────────────────────</dark_gray>"));
+        sendStrikethroughSeparator(player);
+    }
+
+    private static void sendStrikethroughSeparator(Player player) {
+        player.sendMessage(MINI_MESSAGE.deserialize(
+                "<dark_gray><st><line></st></dark_gray>",
+                Placeholder.unparsed("line", STRIKETHROUGH_SEPARATOR)
+        ));
     }
 
     private static void sendClaimInfoRow(Player player, String label, String value) {
         player.sendMessage(MINI_MESSAGE.deserialize(
-                "<dark_gray>  ┃ </dark_gray><aqua><label></aqua> <dark_gray>»</dark_gray> <white><value>",
+                " <aqua><label></aqua> <dark_gray>»</dark_gray> <white><value>",
                 Placeholder.unparsed("label", label),
                 Placeholder.unparsed("value", value)
         ));
