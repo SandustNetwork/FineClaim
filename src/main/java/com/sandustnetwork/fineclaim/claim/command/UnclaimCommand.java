@@ -2,8 +2,7 @@ package com.sandustnetwork.fineclaim.claim.command;
 
 import com.sandustnetwork.fineclaim.claim.application.ClaimOperationResult;
 import com.sandustnetwork.fineclaim.claim.application.ClaimService;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
-import com.sandustnetwork.fineclaim.claim.util.ClaimChunkMapper;
+import com.sandustnetwork.fineclaim.claim.util.ClaimLocationMapper;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
 import com.sandustnetwork.fineclaim.permission.FineClaimPermission;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
@@ -37,8 +36,14 @@ public final class UnclaimCommand implements BasicCommand {
             return;
         }
 
-        ClaimChunk chunk = ClaimChunkMapper.fromLocation(player.getLocation());
-        ClaimOperationResult result = claimService.deleteRegionAt(chunk, player.getUniqueId());
+        var location = ClaimLocationMapper.fromLocation(player.getLocation());
+        ClaimOperationResult result = claimService.deleteAtBlock(
+                location.worldName(),
+                location.x(),
+                location.y(),
+                location.z(),
+                player.getUniqueId()
+        );
         ClaimCommand.sendOperationResult(player, result);
     }
 }

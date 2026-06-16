@@ -2,8 +2,7 @@ package com.sandustnetwork.fineclaim.claim.command;
 
 import com.sandustnetwork.fineclaim.claim.application.ClaimOperationResult;
 import com.sandustnetwork.fineclaim.claim.application.ClaimService;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
-import com.sandustnetwork.fineclaim.claim.util.ClaimChunkMapper;
+import com.sandustnetwork.fineclaim.claim.util.ClaimLocationMapper;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
 import com.sandustnetwork.fineclaim.permission.FineClaimPermission;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
@@ -45,10 +44,17 @@ public final class TrustCommand implements BasicCommand {
             return;
         }
 
-        ClaimChunk chunk = ClaimChunkMapper.fromLocation(player.getLocation());
+        var location = ClaimLocationMapper.fromLocation(player.getLocation());
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(args[0]);
         UUID targetId = offlinePlayer.getUniqueId();
-        ClaimOperationResult result = claimService.trustPlayer(chunk, player.getUniqueId(), targetId);
+        ClaimOperationResult result = claimService.trustPlayer(
+                location.worldName(),
+                location.x(),
+                location.y(),
+                location.z(),
+                player.getUniqueId(),
+                targetId
+        );
         ClaimCommand.sendOperationResult(player, result);
     }
 }

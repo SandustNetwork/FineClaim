@@ -9,24 +9,20 @@ import java.util.UUID;
 public final class Claim {
 
     private final ClaimId id;
-    private final Set<ClaimChunk> chunks;
+    private final ClaimBox box;
     private final UUID owner;
     private final Instant createdAt;
     private final Set<UUID> trustedPlayers;
 
     public Claim(
             ClaimId id,
-            Set<ClaimChunk> chunks,
+            ClaimBox box,
             UUID owner,
             Instant createdAt,
             Set<UUID> trustedPlayers
     ) {
         this.id = Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(chunks, "chunks");
-        if (chunks.isEmpty()) {
-            throw new IllegalArgumentException("Claim must contain at least one chunk");
-        }
-        this.chunks = Set.copyOf(chunks);
+        this.box = Objects.requireNonNull(box, "box");
         this.owner = Objects.requireNonNull(owner, "owner");
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         Objects.requireNonNull(trustedPlayers, "trustedPlayers");
@@ -40,8 +36,8 @@ public final class Claim {
         return id;
     }
 
-    public Set<ClaimChunk> getChunks() {
-        return chunks;
+    public ClaimBox getBox() {
+        return box;
     }
 
     public UUID getOwner() {
@@ -56,13 +52,12 @@ public final class Claim {
         return trustedPlayers;
     }
 
-    public int chunkCount() {
-        return chunks.size();
+    public int blockCount() {
+        return box.volume();
     }
 
-    public boolean containsChunk(ClaimChunk chunk) {
-        Objects.requireNonNull(chunk, "chunk");
-        return chunks.contains(chunk);
+    public boolean containsBlock(int x, int y, int z) {
+        return box.contains(x, y, z);
     }
 
     public boolean isOwner(UUID playerId) {
@@ -79,27 +74,9 @@ public final class Claim {
         return isOwner(playerId) || isTrusted(playerId);
     }
 
-    public Claim withChunkAdded(ClaimChunk chunk) {
-        Objects.requireNonNull(chunk, "chunk");
-        if (chunks.contains(chunk)) {
-            return this;
-        }
-        Set<ClaimChunk> updatedChunks = new HashSet<>(chunks);
-        updatedChunks.add(chunk);
-        return new Claim(id, updatedChunks, owner, createdAt, trustedPlayers);
-    }
-
-    public Claim withChunkRemoved(ClaimChunk chunk) {
-        Objects.requireNonNull(chunk, "chunk");
-        if (!chunks.contains(chunk)) {
-            return this;
-        }
-        Set<ClaimChunk> updatedChunks = new HashSet<>(chunks);
-        updatedChunks.remove(chunk);
-        if (updatedChunks.isEmpty()) {
-            throw new IllegalArgumentException("Claim must contain at least one chunk");
-        }
-        return new Claim(id, updatedChunks, owner, createdAt, trustedPlayers);
+    public Claim withBox(ClaimBox newBox) {
+        Objects.requireNonNull(newBox, "newBox");
+        return new Claim(id, newBox, owner, createdAt, trustedPlayers);
     }
 
     public Claim trust(UUID target) {
@@ -112,7 +89,7 @@ public final class Claim {
         }
         Set<UUID> updatedTrustedPlayers = new HashSet<>(trustedPlayers);
         updatedTrustedPlayers.add(target);
-        return new Claim(id, chunks, owner, createdAt, updatedTrustedPlayers);
+        return new Claim(id, box, owner, createdAt, updatedTrustedPlayers);
     }
 
     public Claim untrust(UUID target) {
@@ -125,6 +102,6 @@ public final class Claim {
         }
         Set<UUID> updatedTrustedPlayers = new HashSet<>(trustedPlayers);
         updatedTrustedPlayers.remove(target);
-        return new Claim(id, chunks, owner, createdAt, updatedTrustedPlayers);
+        return new Claim(id, box, owner, createdAt, updatedTrustedPlayers);
     }
 }

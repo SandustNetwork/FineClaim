@@ -1,6 +1,6 @@
 package com.sandustnetwork.fineclaim.claim.util;
 
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
+import com.sandustnetwork.fineclaim.claim.domain.ClaimBox;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
@@ -66,14 +66,13 @@ public final class FineClaimMessages {
     public static void sendClaimInfoPanel(
             Player player,
             String ownerName,
-            ClaimChunk currentChunk,
-            int regionChunkCount,
+            ClaimBox box,
             int trustedCount,
             Instant createdAt
     ) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(ownerName, "ownerName");
-        Objects.requireNonNull(currentChunk, "currentChunk");
+        Objects.requireNonNull(box, "box");
         Objects.requireNonNull(createdAt, "createdAt");
 
         sendStrikethroughSeparator(player);
@@ -83,12 +82,18 @@ public final class FineClaimMessages {
         ));
         sendStrikethroughSeparator(player);
         sendClaimInfoRow(player, "Owner", ownerName);
-        sendClaimInfoRow(player, "Chunk", currentChunk.worldName()
-                + " (" + currentChunk.chunkX() + ", " + currentChunk.chunkZ() + ")");
-        sendClaimInfoRow(player, "Region size", regionChunkCount + " chunk(s)");
+        sendClaimInfoRow(player, "World", box.worldName());
+        sendClaimInfoRow(player, "Size", box.sizeX() + " x " + box.sizeY() + " x " + box.sizeZ());
+        sendClaimInfoRow(player, "Blocks", String.valueOf(box.volume()));
+        sendClaimInfoRow(player, "From", formatCorner(box.minX(), box.minY(), box.minZ()));
+        sendClaimInfoRow(player, "To", formatCorner(box.maxX(), box.maxY(), box.maxZ()));
         sendClaimInfoRow(player, "Trusted", formatTrustedCount(trustedCount));
         sendClaimInfoRow(player, "Created", formatCreatedAt(createdAt));
         sendStrikethroughSeparator(player);
+    }
+
+    private static String formatCorner(int x, int y, int z) {
+        return "(" + x + ", " + y + ", " + z + ")";
     }
 
     private static void sendStrikethroughSeparator(Player player) {

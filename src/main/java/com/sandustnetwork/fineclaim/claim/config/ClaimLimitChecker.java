@@ -19,21 +19,39 @@ public final class ClaimLimitChecker {
         this.settings = Objects.requireNonNull(settings, "settings");
     }
 
-    public boolean canAddChunk(UUID owner) {
+    public boolean canAddBlocks(UUID owner, int additionalBlocks) {
         Objects.requireNonNull(owner, "owner");
-        return repository.countChunksByOwner(owner) < settings.maxChunksPerMember()
-                && repository.countTotalChunks() < settings.maxChunksPerServer();
+        if (additionalBlocks <= 0) {
+            return true;
+        }
+        return repository.countBlocksByOwner(owner) + additionalBlocks <= settings.maxBlocksPerMember()
+                && repository.countTotalBlocks() + additionalBlocks <= settings.maxBlocksPerServer();
     }
 
-    public String limitFailureMessage(UUID owner) {
+    public boolean canChangeBlocks(UUID owner, int blockDelta) {
         Objects.requireNonNull(owner, "owner");
-        if (repository.countChunksByOwner(owner) >= settings.maxChunksPerMember()) {
-            return "You have reached your maximum claim size of " + settings.maxChunksPerMember() + " chunk(s).";
+        if (blockDelta <= 0) {
+            return true;
         }
-        if (repository.countTotalChunks() >= settings.maxChunksPerServer()) {
+        return canAddBlocks(owner, blockDelta);
+    }
+
+    public String limitFailureMessage(UUID owner, int additionalBlocks) {
+        Objects.requireNonNull(owner, "owner");
+        if (repository.countBlocksByOwner(owner) + additionalBlocks > settings.maxBlocksPerMember()) {
+            return "You have reached your maximum claim size of " + settings.maxBlocksPerMember() + " block(s).";
+        }
+        if (repository.countTotalBlocks() + additionalBlocks > settings.maxBlocksPerServer()) {
             return "The server has reached the maximum claim capacity of "
-                    + settings.maxChunksPerServer() + " chunk(s).";
+                    + settings.maxBlocksPerServer() + " block(s).";
         }
-        return "You cannot claim this chunk.";
+        return "You cannot claim this area.";
+    }
+
+    public String validateBox(int volume) {
+        if (volume <= 0) {
+            return "Claim area must contain at least one block.";
+        }
+        return null;
     }
 }

@@ -10,7 +10,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Plugin copied to the server `plugins/` folder
 - Two regular test accounts: **PlayerA**, **PlayerB**
 - One OP/admin account: **Admin**
-- Default `config.yml` limits: `MaxChunksPerMember: 16`, `MaxChunksPerServer: 10000`, `PreviewDisplaySeconds: 120`
+- Default limits: `MaxBlocksPerMember: 4096`, `MaxBlocksPerServer: 2500000`, `PreviewDisplaySeconds: 120`
 
 ## 1. Start server with FineClaim
 
@@ -27,268 +27,211 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - `plugins/FineClaim/` folder is created with `config.yml` and `claims.yml`.
 - No stack trace related to FineClaim.
 
-## 2. Preview claim with `/claim`
+## 2. Start claim selection with `/claim`
 
 **Steps**
 
 1. Join as **PlayerA**.
-2. Stand in an unclaimed chunk.
-3. Run `/claim` (no arguments).
+2. Stand in an unclaimed area.
+3. Run `/claim`.
 
 **Expected**
 
-- Message: `Preview active. Use /claim confirm or /claim cancel.`
-- Light-blue **BlockDisplay** corner markers appear at the four corners of the current chunk.
-- Running `/claiminfo` still reports: `This chunk is not claimed.` (preview does not create a claim yet).
+- Message explains Claim Wand usage.
+- **Claim Wand** (stick with glow) appears in inventory.
+- Location is **not** claimed yet.
 
-## 3. Cancel preview with `/claim cancel`
+## 3. Select points A and B with the wand
 
 **Steps**
 
-1. As **PlayerA**, with an active preview from step 2, run `/claim cancel`.
+1. Left-click a block to set point A.
+2. Right-click another block to set point B (diagonal corners of desired box).
+3. Observe the preview border.
 
 **Expected**
 
-- Message: `Claim preview cancelled.`
-- BlockDisplay markers disappear.
-- Chunk remains unclaimed.
+- Messages confirm point A and point B coordinates.
+- BlockDisplay markers appear at the box corners.
+- `/claiminfo` still reports location is not claimed until confirm.
 
-## 4. Confirm claim with `/claim confirm`
+## 4. Cancel selection with `/claim cancel`
 
 **Steps**
 
-1. As **PlayerA**, stand in an unclaimed chunk.
-2. Run `/claim`.
+1. With an active wand session, run `/claim cancel`.
+
+**Expected**
+
+- Claim Wand is removed from inventory.
+- Preview border disappears.
+- No claim is created.
+
+## 5. Confirm claim with `/claim confirm`
+
+**Steps**
+
+1. Run `/claim` again to get a new wand.
+2. Set points A and B around a small area (for example 5×5×5 blocks).
 3. Run `/claim confirm`.
 
 **Expected**
 
 - Message: `Claim created.`
-- Region border is shown for the new 1-chunk claim.
-- `/claiminfo` shows **PlayerA** as owner and **Chunks: 1**.
+- Claim Wand is removed.
+- Box border is shown briefly.
+- `/claiminfo` inside the box shows owner **PlayerA**, block count, and size.
 
-## 5. Expand claim with `/claim expand`
-
-**Steps**
-
-1. As **PlayerA**, move to an **adjacent unclaimed** chunk (north, east, south, or west of the existing claim).
-2. Run `/claim expand`.
-
-**Expected**
-
-- Message: `Claim expanded.`
-- Border displays update to cover both chunks.
-- `/claiminfo` in either chunk shows **Chunks: 2** and the same owner.
-
-## 6. Shrink claim with `/claim shrink`
+## 6. Tab completion for `/claim`
 
 **Steps**
 
-1. As **PlayerA**, stand on an **edge chunk** of the region (a chunk with at least one unclaimed neighbor).
-2. Run `/claim shrink`.
+1. Type `/claim ` and press Tab.
+2. Type `/claim resize ` and press Tab.
 
 **Expected**
 
-- Message: `Claim shrunk.` (or `Claim removed.` if shrinking the last chunk).
-- Border updates to reflect the smaller region.
-- `/claiminfo` shows the reduced chunk count.
-
-**Edge case — interior chunk**
-
-1. Expand to at least 3 chunks in a row.
-2. Stand on the middle chunk and run `/claim shrink`.
-
-**Expected**
-
-- Message: `You can only shrink edge chunks of your claim.`
-- Region size unchanged.
+- First level suggests: `confirm`, `cancel`, `resize`.
+- After `resize`, suggests: `confirm`, `cancel`.
 
 ## 7. Player B tries break / place / interact in the claim
 
 **Steps**
 
 1. Join as **PlayerB**.
-2. Enter a chunk claimed by **PlayerA**.
-3. Try to break a block.
-4. Try to place a block.
-5. Right-click a block (for example a chest, door, or button).
-6. Left-click a block.
+2. Enter the claimed box.
+3. Try to break, place, and interact with blocks.
 
 **Expected**
 
-- Break is cancelled.
-- Place is cancelled.
-- Interact is cancelled.
-- **PlayerB** receives: `You cannot do that in this claim.`
+- Actions are cancelled for **PlayerB**.
+- Message: `You cannot do that in this claim.`
 
 ## 8. Player A runs `/trust PlayerB`
 
 **Steps**
 
-1. Join as **PlayerA** in the claimed chunk.
+1. As **PlayerA**, stand inside the claim.
 2. Run `/trust PlayerB`.
 
 **Expected**
 
 - Message: `Player trusted.`
-- `/claiminfo` shows trusted player count increased by 1.
+- `/claiminfo` shows trusted count increased.
 
 ## 9. Player B tries again after trust
 
 **Steps**
 
-1. Join as **PlayerB** in the same claimed chunk.
-2. Repeat break, place, and interact tests from step 7.
+1. As **PlayerB**, repeat break/place/interact inside the claim.
 
 **Expected**
 
-- Break succeeds.
-- Place succeeds.
-- Interact succeeds.
+- Actions succeed.
 - No protection denial message.
 
-## 10. Player A runs `/untrust PlayerB`
+## 10. Resize claim with `/claim resize`
 
 **Steps**
 
-1. Join as **PlayerA** in the claimed chunk.
-2. Run `/untrust PlayerB`.
+1. As **PlayerA**, stand inside the claim.
+2. Run `/claim resize`.
+3. Left-click new point A and right-click new point B (full re-selection).
+4. Run `/claim resize confirm`.
 
 **Expected**
 
-- Message: `Player untrusted.`
-- `/claiminfo` shows trusted player count decreased.
+- Message: `Claim resized.`
+- `/claiminfo` shows updated size and block count.
+- New box border preview appears.
 
-## 11. Player A runs `/claiminfo`
+## 11. Cancel resize with `/claim resize cancel`
 
 **Steps**
 
-1. As **PlayerA**, stand in any chunk of the region.
-2. Run `/claiminfo`.
+1. Run `/claim resize`, set new A/B but do **not** confirm.
+2. Run `/claim resize cancel`.
 
 **Expected**
 
-- Output includes:
-  - Owner name matching **PlayerA**
-  - Current chunk world name and chunk X/Z
-  - **Chunks:** total region size
-  - Trusted players count
-  - Created-at date (`dd/MM/yyyy`)
-- Region border is displayed for all chunks in the claim.
+- Wand removed, preview cleared.
+- Original claim boundaries unchanged.
 
-## 12. Unclaim entire region with `/unclaim`
+## 12. Block limits (`MaxBlocksPerMember`)
 
 **Steps**
 
-1. As **PlayerA**, stand in any chunk of the region.
-2. Run `/unclaim`.
-
-**Expected**
-
-- Message: `Claim deleted.`
-- `/claiminfo` reports: `This chunk is not claimed.`
-- All chunks in the former region are unclaimed.
-
-## 13. Claim limits (`MaxChunksPerMember`)
-
-**Steps**
-
-1. Temporarily set `MaxChunksPerMember: 1` in `config.yml`.
+1. Set `MaxBlocksPerMember: 100` in `config.yml`.
 2. Run `/fineclaim reload` as **Admin**.
-3. As **PlayerA**, claim and confirm one chunk.
-4. Move to another unclaimed chunk and run `/claim confirm` (after preview) or `/claim expand`.
+3. Try to confirm a box larger than 100 blocks.
 
 **Expected**
 
-- Operation is denied with a limit message.
-- No additional chunks are added.
+- Confirm is denied with a limit message.
+- No claim is created or expanded beyond limit.
 
-Restore `MaxChunksPerMember` to `16` and reload when finished.
+Restore `MaxBlocksPerMember` when finished.
+
+## 13. Overlap rejection
+
+**Steps**
+
+1. As **PlayerA**, create a claim box.
+2. As **PlayerB**, try to confirm a box that overlaps **PlayerA**'s claim.
+
+**Expected**
+
+- Confirm is denied: overlaps existing claim.
 
 ## 14. Preview auto-expire
 
 **Steps**
 
-1. Temporarily set `PreviewDisplaySeconds: 5` in `config.yml`.
-2. Run `/fineclaim reload`.
-3. As **PlayerA**, run `/claim` in an unclaimed chunk.
-4. Wait at least 5 seconds without confirming.
+1. Set `PreviewDisplaySeconds: 5` and reload.
+2. Run `/claim`, set A/B, wait 5+ seconds without confirming.
 
 **Expected**
 
-- BlockDisplay markers disappear automatically.
-- `/claim confirm` reports: `You do not have an active claim preview.`
+- Preview border disappears.
+- `/claim confirm` reports no active selection.
 
-Restore `PreviewDisplaySeconds` to `120` and reload when finished.
-
-## 15. Restart server
+## 15. Restart server and verify persistence
 
 **Steps**
 
-1. Stop the Folia server cleanly.
-2. Start the server again.
-3. Confirm FineClaim loads successfully.
+1. Stop and restart the server.
+2. As **PlayerA**, run `/claiminfo` inside the claim.
+3. As **PlayerB**, try to break a block inside the claim.
 
 **Expected**
 
-- Server restarts without FineClaim errors.
-- Console shows claim load log from storage (for example: `Loaded N chunk(s) from claims.yml.`).
-- Legacy single-chunk entries in `claims.yml` are migrated to the v2 `chunks:` format on load.
+- Claim data persists in `claims.yml` (v3 `box:` format).
+- Protection still works after restart.
 
-## 16. Verify claim persists after restart
-
-**Steps**
-
-1. Join as **PlayerA** and run `/claiminfo` in a claimed chunk.
-2. Join as **PlayerB** and try to break a block in that chunk.
-
-**Expected**
-
-- `/claiminfo` still shows the same owner, region size, and chunk data.
-- **PlayerB** is blocked again with `You cannot do that in this claim.`
-- Trusted list matches state before restart.
-
-## 17. Test OP / admin bypass
+## 16. Test OP / admin bypass
 
 **Steps**
 
-1. Join as **Admin** (OP account).
-2. Enter a chunk claimed by **PlayerA**.
-3. Try break, place, and interact without being owner or trusted.
+1. As **Admin**, enter **PlayerA**'s claim without trust.
+2. Try break, place, and interact.
 
 **Expected**
 
 - All actions succeed.
-- No protection denial message.
-- Admin can inspect any claim with `/claiminfo` even when not owner/trusted.
+- `/claiminfo` works for admin.
 
-## 18. Test command permission deny
-
-**Steps**
-
-1. Remove a command permission from a test player (for example deny `fineclaim.command.claim`).
-2. Have that player run the matching command (for example `/claim`).
-3. Repeat for at least one other command (for example `/claiminfo` with `fineclaim.command.info` denied).
-
-**Expected**
-
-- Command does not execute.
-- Player receives: `You do not have permission to use this command.`
-- No claim changes occur when `/claim` is denied.
-
-## 19. Test `/fineclaim reload`
+## 17. Test `/fineclaim reload`
 
 **Steps**
 
-1. As **Admin**, edit `config.yml` (for example change `BorderBlock`).
-2. Run `/fineclaim reload`.
+1. As **Admin**, run `/fineclaim reload`.
 
 **Expected**
 
-- Message confirms config and claims were reloaded.
-- New settings apply to subsequent previews and borders.
+- Success message with loaded block count.
+- Tab on `/fineclaim ` suggests `reload`.
 
 ## Optional cleanup
 
-- Run `/unclaim` as **PlayerA** on each region to remove test claims.
-- Confirm `/claiminfo` reports: `This chunk is not claimed.`
+- Run `/unclaim` as **PlayerA** inside the claim to remove it.
+- Confirm `/claiminfo` reports location is not claimed.

@@ -11,6 +11,10 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class FineClaimAdminCommand implements BasicCommand {
@@ -51,10 +55,29 @@ public final class FineClaimAdminCommand implements BasicCommand {
         limitChecker.updateSettings(settings);
         previewManager.updateSettings(settings);
 
-        int claimCount = claimRepository.reloadFromFile();
+        int blockCount = claimRepository.reloadFromFile();
         FineClaimMessages.sendSuccess(
                 sender,
-                "Reloaded config.yml and loaded " + claimCount + " chunk(s) from claims.yml."
+                "Reloaded config.yml and loaded " + blockCount + " block(s) from claims.yml."
         );
+    }
+
+    @Override
+    public Collection<String> suggest(CommandSourceStack source, String[] args) {
+        if (args.length == 1) {
+            return filterSuggestions(List.of("reload"), args[0]);
+        }
+        return List.of();
+    }
+
+    private static List<String> filterSuggestions(List<String> options, String prefix) {
+        String normalizedPrefix = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
+        List<String> matches = new ArrayList<>();
+        for (String option : options) {
+            if (option.toLowerCase(Locale.ROOT).startsWith(normalizedPrefix)) {
+                matches.add(option);
+            }
+        }
+        return matches;
     }
 }

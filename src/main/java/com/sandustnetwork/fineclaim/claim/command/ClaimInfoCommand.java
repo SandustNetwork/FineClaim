@@ -2,8 +2,8 @@ package com.sandustnetwork.fineclaim.claim.command;
 
 import com.sandustnetwork.fineclaim.claim.application.ClaimService;
 import com.sandustnetwork.fineclaim.claim.domain.Claim;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
-import com.sandustnetwork.fineclaim.claim.util.ClaimChunkMapper;
+import com.sandustnetwork.fineclaim.claim.domain.ClaimBox;
+import com.sandustnetwork.fineclaim.claim.util.ClaimLocationMapper;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
 import com.sandustnetwork.fineclaim.claim.visual.ClaimPreviewManager;
 import com.sandustnetwork.fineclaim.permission.FineClaimPermission;
@@ -45,10 +45,15 @@ public final class ClaimInfoCommand implements BasicCommand {
             return;
         }
 
-        ClaimChunk chunk = ClaimChunkMapper.fromLocation(player.getLocation());
-        Optional<Claim> claimOptional = claimService.getClaimAt(chunk);
+        var location = ClaimLocationMapper.fromLocation(player.getLocation());
+        Optional<Claim> claimOptional = claimService.getClaimAtBlock(
+                location.worldName(),
+                location.x(),
+                location.y(),
+                location.z()
+        );
         if (claimOptional.isEmpty()) {
-            FineClaimMessages.sendInfo(player, "This chunk is not claimed.");
+            FineClaimMessages.sendInfo(player, "This location is not claimed.");
             return;
         }
 
@@ -58,14 +63,14 @@ public final class ClaimInfoCommand implements BasicCommand {
             return;
         }
 
+        ClaimBox box = claim.getBox();
         FineClaimMessages.sendClaimInfoPanel(
                 player,
                 FineClaimMessages.resolvePlayerName(claim.getOwner()),
-                chunk,
-                claim.chunkCount(),
+                box,
                 claim.getTrustedPlayers().size(),
                 claim.getCreatedAt()
         );
-        previewManager.showRegionBorder(player, claim);
+        previewManager.showClaimBorder(player, claim);
     }
 }

@@ -1,7 +1,6 @@
 package com.sandustnetwork.fineclaim.claim.protection;
 
 import com.sandustnetwork.fineclaim.claim.application.ClaimService;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
 import org.bukkit.entity.Player;
 
@@ -18,28 +17,28 @@ public final class ProtectionCheck {
         this.permissionChecker = Objects.requireNonNull(permissionChecker, "permissionChecker");
     }
 
-    public ProtectionResult checkBuild(ClaimChunk chunk, Player player) {
-        Objects.requireNonNull(chunk, "chunk");
+    public ProtectionResult checkBuild(String worldName, int x, int y, int z, Player player) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(player, "player");
-        return evaluateAccess(chunk, player);
+        return evaluateAccess(worldName, x, y, z, player);
     }
 
-    public ProtectionResult checkInteract(ClaimChunk chunk, Player player) {
-        Objects.requireNonNull(chunk, "chunk");
+    public ProtectionResult checkInteract(String worldName, int x, int y, int z, Player player) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(player, "player");
-        return evaluateAccess(chunk, player);
+        return evaluateAccess(worldName, x, y, z, player);
     }
 
-    private ProtectionResult evaluateAccess(ClaimChunk chunk, Player player) {
+    private ProtectionResult evaluateAccess(String worldName, int x, int y, int z, Player player) {
         if (permissionChecker.hasAdminBypass(player)) {
             return ProtectionResult.allowed();
         }
 
         UUID playerId = player.getUniqueId();
-        if (claimService.getClaimAt(chunk).isEmpty()) {
+        if (claimService.getClaimAtBlock(worldName, x, y, z).isEmpty()) {
             return ProtectionResult.allowed();
         }
-        if (claimService.canBuild(chunk, playerId)) {
+        if (claimService.canBuild(worldName, x, y, z, playerId)) {
             return ProtectionResult.allowed();
         }
         return ProtectionResult.denied("You cannot do that in this claim.");

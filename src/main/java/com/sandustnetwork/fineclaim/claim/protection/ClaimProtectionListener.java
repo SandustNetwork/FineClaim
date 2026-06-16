@@ -1,7 +1,5 @@
 package com.sandustnetwork.fineclaim.claim.protection;
 
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
-import com.sandustnetwork.fineclaim.claim.util.ClaimChunkMapper;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,8 +20,14 @@ public final class ClaimProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        ClaimChunk chunk = ClaimChunkMapper.fromLocation(event.getBlock().getLocation());
-        ProtectionResult result = protectionCheck.checkBuild(chunk, event.getPlayer());
+        var location = event.getBlock().getLocation();
+        ProtectionResult result = protectionCheck.checkBuild(
+                location.getWorld().getName(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ(),
+                event.getPlayer()
+        );
         if (!result.isAllowed()) {
             event.setCancelled(true);
             FineClaimMessages.sendError(event.getPlayer(), result.message());
@@ -32,8 +36,14 @@ public final class ClaimProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        ClaimChunk chunk = ClaimChunkMapper.fromLocation(event.getBlock().getLocation());
-        ProtectionResult result = protectionCheck.checkBuild(chunk, event.getPlayer());
+        var location = event.getBlock().getLocation();
+        ProtectionResult result = protectionCheck.checkBuild(
+                location.getWorld().getName(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ(),
+                event.getPlayer()
+        );
         if (!result.isAllowed()) {
             event.setCancelled(true);
             FineClaimMessages.sendError(event.getPlayer(), result.message());
@@ -51,8 +61,14 @@ public final class ClaimProtectionListener implements Listener {
             return;
         }
 
-        ClaimChunk chunk = ClaimChunkMapper.fromLocation(event.getClickedBlock().getLocation());
-        ProtectionResult result = protectionCheck.checkInteract(chunk, event.getPlayer());
+        var location = event.getClickedBlock().getLocation();
+        ProtectionResult result = protectionCheck.checkInteract(
+                location.getWorld().getName(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ(),
+                event.getPlayer()
+        );
         if (!result.isAllowed()) {
             event.setCancelled(true);
             FineClaimMessages.sendError(event.getPlayer(), result.message());

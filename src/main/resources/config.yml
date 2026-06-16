@@ -1,4 +1,6 @@
-MaxChunksPerMember: 16
-MaxChunksPerServer: 10000
+MaxBlocksPerMember: 4096
+MaxBlocksPerServer: 2500000
 PreviewDisplaySeconds: 120
 BorderBlock: LIGHT_BLUE_STAINED_GLASS
+MinClaimHeight: -64
+MaxClaimHeight: 320

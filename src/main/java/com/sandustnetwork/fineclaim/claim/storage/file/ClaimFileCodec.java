@@ -1,7 +1,7 @@
 package com.sandustnetwork.fineclaim.claim.storage.file;
 
 import com.sandustnetwork.fineclaim.claim.domain.Claim;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
+import com.sandustnetwork.fineclaim.claim.domain.ClaimBox;
 import com.sandustnetwork.fineclaim.claim.domain.ClaimId;
 
 import org.bukkit.configuration.file.FileConfiguration;
@@ -24,7 +24,20 @@ import java.util.UUID;
 public final class ClaimFileCodec {
 
     private static final String CLAIMS_KEY = "claims";
+    private static final String BOX_KEY = "box";
     private static final String CHUNKS_KEY = "chunks";
+
+    private final int migrationMinY;
+    private final int migrationMaxY;
+
+    public ClaimFileCodec() {
+        this(-64, 320);
+    }
+
+    public ClaimFileCodec(int migrationMinY, int migrationMaxY) {
+        this.migrationMinY = migrationMinY;
+        this.migrationMaxY = migrationMaxY;
+    }
 
     public List<Claim> read(Path file) throws IOException {
         Objects.requireNonNull(file, "file");
@@ -66,42 +79,96 @@ public final class ClaimFileCodec {
         UUID owner = UUID.fromString(requireString(entry, "owner"));
         Instant createdAt = Instant.parse(requireString(entry, "createdAt"));
         Set<UUID> trustedPlayers = decodeTrustedPlayers(entry.get("trustedPlayers"));
-        Set<ClaimChunk> chunks = decodeChunks(entry);
+        ClaimBox box = decodeBox(entry);
 
-        return new Claim(new ClaimId(id), chunks, owner, createdAt, trustedPlayers);
+        return new Claim(new ClaimId(id), box, owner, createdAt, trustedPlayers);
     }
 
-    private Set<ClaimChunk> decodeChunks(Map<?, ?> entry) {
-        Object rawChunks = entry.get(CHUNKS_KEY);
-        if (rawChunks instanceof List<?> chunkList) {
-            Set<ClaimChunk> chunks = new HashSet<>();
-            for (Object rawChunk : chunkList) {
-                if (!(rawChunk instanceof Map<?, ?> chunkEntry)) {
-                    throw new IllegalArgumentException("Each chunk entry must be a map");
-                }
-                chunks.add(decodeChunkEntry(chunkEntry));
-            }
-            if (chunks.isEmpty()) {
-                throw new IllegalArgumentException("Claim must contain at least one chunk");
-            }
-            return Set.copyOf(chunks);
+    private ClaimBox decodeBox(Map<?, ?> entry) {
+        Object rawBox = entry.get(BOX_KEY);
+        if (rawBox instanceof Map<?, ?> boxEntry) {
+            return decodeBoxEntry(boxEntry);
         }
 
-        return Set.of(decodeLegacyChunk(entry));
+        return migrateChunksToBox(entry);
     }
 
-    private ClaimChunk decodeLegacyChunk(Map<?, ?> entry) {
+    private ClaimBox decodeBoxEntry(Map<?, ?> boxEntry) {
+        String worldName = requireString(boxEntry, "worldName");
+        int minX = requireInt(boxEntry, "minX");
+        int minY = requireInt(boxEntry, "minY");
+        int minZ = requireInt(boxEntry, "minZ");
+        int maxX = requireInt(boxEntry, "maxX");
+        int maxY = requireInt(boxEntry, "maxY");
+        int maxZ = requireInt(boxEntry, "maxZ");
+        return new ClaimBox(worldName, minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    private ClaimBox migrateChunksToBox(Map<?, ?> entry) {
+        Object rawChunks = entry.get(CHUNKS_KEY);
+        if (rawChunks instanceof List<?> chunkList) {
+            return mergeChunkEntries(chunkList);
+        }
+        return chunkToBox(decodeLegacyChunk(entry));
+    }
+
+    private ClaimBox mergeChunkEntries(List<?> chunkList) {
+        if (chunkList.isEmpty()) {
+            throw new IllegalArgumentException("Claim must contain at least one chunk");
+        }
+
+        String worldName = null;
+        int minChunkX = Integer.MAX_VALUE;
+        int maxChunkX = Integer.MIN_VALUE;
+        int minChunkZ = Integer.MAX_VALUE;
+        int maxChunkZ = Integer.MIN_VALUE;
+
+        for (Object rawChunk : chunkList) {
+            if (!(rawChunk instanceof Map<?, ?> chunkEntry)) {
+                throw new IllegalArgumentException("Each chunk entry must be a map");
+            }
+            String chunkWorld = requireString(chunkEntry, "worldName");
+            int chunkX = requireInt(chunkEntry, "chunkX");
+            int chunkZ = requireInt(chunkEntry, "chunkZ");
+            if (worldName == null) {
+                worldName = chunkWorld;
+            } else if (!worldName.equals(chunkWorld)) {
+                throw new IllegalArgumentException("All chunks in a claim must share the same world");
+            }
+            minChunkX = Math.min(minChunkX, chunkX);
+            maxChunkX = Math.max(maxChunkX, chunkX);
+            minChunkZ = Math.min(minChunkZ, chunkZ);
+            maxChunkZ = Math.max(maxChunkZ, chunkZ);
+        }
+
+        return new ClaimBox(
+                worldName,
+                minChunkX << 4,
+                migrationMinY,
+                minChunkZ << 4,
+                (maxChunkX << 4) + 15,
+                migrationMaxY,
+                (maxChunkZ << 4) + 15
+        );
+    }
+
+    private ClaimBox chunkToBox(LegacyChunk chunk) {
+        return new ClaimBox(
+                chunk.worldName(),
+                chunk.chunkX() << 4,
+                migrationMinY,
+                chunk.chunkZ() << 4,
+                (chunk.chunkX() << 4) + 15,
+                migrationMaxY,
+                (chunk.chunkZ() << 4) + 15
+        );
+    }
+
+    private LegacyChunk decodeLegacyChunk(Map<?, ?> entry) {
         String worldName = requireString(entry, "worldName");
         int chunkX = requireInt(entry, "chunkX");
         int chunkZ = requireInt(entry, "chunkZ");
-        return new ClaimChunk(worldName, chunkX, chunkZ);
-    }
-
-    private ClaimChunk decodeChunkEntry(Map<?, ?> chunkEntry) {
-        String worldName = requireString(chunkEntry, "worldName");
-        int chunkX = requireInt(chunkEntry, "chunkX");
-        int chunkZ = requireInt(chunkEntry, "chunkZ");
-        return new ClaimChunk(worldName, chunkX, chunkZ);
+        return new LegacyChunk(worldName, chunkX, chunkZ);
     }
 
     private Map<String, Object> encodeClaim(Claim claim) {
@@ -110,20 +177,20 @@ public final class ClaimFileCodec {
         entry.put("owner", claim.getOwner().toString());
         entry.put("createdAt", claim.getCreatedAt().toString());
         entry.put("trustedPlayers", encodeTrustedPlayers(claim.getTrustedPlayers()));
-        entry.put(CHUNKS_KEY, encodeChunks(claim.getChunks()));
+        entry.put(BOX_KEY, encodeBox(claim.getBox()));
         return entry;
     }
 
-    private List<Map<String, Object>> encodeChunks(Set<ClaimChunk> chunks) {
-        List<Map<String, Object>> encodedChunks = new ArrayList<>(chunks.size());
-        for (ClaimChunk chunk : chunks) {
-            Map<String, Object> chunkEntry = new HashMap<>();
-            chunkEntry.put("worldName", chunk.worldName());
-            chunkEntry.put("chunkX", chunk.chunkX());
-            chunkEntry.put("chunkZ", chunk.chunkZ());
-            encodedChunks.add(chunkEntry);
-        }
-        return encodedChunks;
+    private Map<String, Object> encodeBox(ClaimBox box) {
+        Map<String, Object> boxEntry = new HashMap<>();
+        boxEntry.put("worldName", box.worldName());
+        boxEntry.put("minX", box.minX());
+        boxEntry.put("minY", box.minY());
+        boxEntry.put("minZ", box.minZ());
+        boxEntry.put("maxX", box.maxX());
+        boxEntry.put("maxY", box.maxY());
+        boxEntry.put("maxZ", box.maxZ());
+        return boxEntry;
     }
 
     private Set<UUID> decodeTrustedPlayers(Object rawTrustedPlayers) {
@@ -166,5 +233,8 @@ public final class ClaimFileCodec {
             throw new IllegalArgumentException("Missing or invalid value for '" + key + "'");
         }
         return numberValue.intValue();
+    }
+
+    private record LegacyChunk(String worldName, int chunkX, int chunkZ) {
     }
 }

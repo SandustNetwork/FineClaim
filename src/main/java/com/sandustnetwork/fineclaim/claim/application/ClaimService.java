@@ -2,16 +2,14 @@ package com.sandustnetwork.fineclaim.claim.application;
 
 import com.sandustnetwork.fineclaim.claim.config.ClaimLimitChecker;
 import com.sandustnetwork.fineclaim.claim.domain.Claim;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
-import com.sandustnetwork.fineclaim.claim.domain.ClaimChunkAdjacency;
+import com.sandustnetwork.fineclaim.claim.domain.ClaimBox;
 import com.sandustnetwork.fineclaim.claim.domain.ClaimId;
 import com.sandustnetwork.fineclaim.claim.storage.ClaimRepository;
 
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 public final class ClaimService {
@@ -24,87 +22,73 @@ public final class ClaimService {
         this.limitChecker = Objects.requireNonNull(limitChecker, "limitChecker");
     }
 
-    public ClaimOperationResult createRegion(ClaimChunk chunk, UUID owner) {
-        Objects.requireNonNull(chunk, "chunk");
+    public ClaimOperationResult createFromBox(ClaimBox box, UUID owner) {
+        Objects.requireNonNull(box, "box");
         Objects.requireNonNull(owner, "owner");
 
-        if (repository.findByChunk(chunk).isPresent()) {
-            return ClaimOperationResult.failure("This chunk is already claimed.");
+        String volumeError = limitChecker.validateBox(box.volume());
+        if (volumeError != null) {
+            return ClaimOperationResult.failure(volumeError);
         }
-        if (!limitChecker.canAddChunk(owner)) {
-            return ClaimOperationResult.failure(limitChecker.limitFailureMessage(owner));
+        if (!repository.findOverlapping(box, null).isEmpty()) {
+            return ClaimOperationResult.failure("This area overlaps an existing claim.");
+        }
+        if (!limitChecker.canAddBlocks(owner, box.volume())) {
+            return ClaimOperationResult.failure(limitChecker.limitFailureMessage(owner, box.volume()));
         }
 
         Claim claim = new Claim(
                 ClaimId.random(),
-                Set.of(chunk),
+                box,
                 owner,
                 Instant.now(),
-                Set.of()
+                java.util.Set.of()
         );
         repository.save(claim);
         return ClaimOperationResult.success("Claim created.");
     }
 
-    public ClaimOperationResult expandRegion(ClaimChunk targetChunk, UUID owner) {
-        Objects.requireNonNull(targetChunk, "targetChunk");
+    public ClaimOperationResult resizeClaim(ClaimId claimId, ClaimBox newBox, UUID owner) {
+        Objects.requireNonNull(claimId, "claimId");
+        Objects.requireNonNull(newBox, "newBox");
         Objects.requireNonNull(owner, "owner");
 
-        if (repository.findByChunk(targetChunk).isPresent()) {
-            return ClaimOperationResult.failure("This chunk is already claimed.");
-        }
-        if (!limitChecker.canAddChunk(owner)) {
-            return ClaimOperationResult.failure(limitChecker.limitFailureMessage(owner));
-        }
-
-        Optional<Claim> adjacentRegion = findAdjacentOwnedRegion(targetChunk, owner);
-        if (adjacentRegion.isEmpty()) {
-            return ClaimOperationResult.failure("You must stand in an unclaimed chunk adjacent to your claim.");
-        }
-
-        Claim claim = adjacentRegion.get();
-        Claim updatedClaim = claim.withChunkAdded(targetChunk);
-        repository.save(updatedClaim);
-        return ClaimOperationResult.success("Claim expanded.");
-    }
-
-    public ClaimOperationResult shrinkRegion(ClaimChunk targetChunk, UUID owner) {
-        Objects.requireNonNull(targetChunk, "targetChunk");
-        Objects.requireNonNull(owner, "owner");
-
-        Optional<Claim> existingClaim = repository.findByChunk(targetChunk);
+        Optional<Claim> existingClaim = repository.findById(claimId);
         if (existingClaim.isEmpty()) {
-            return ClaimOperationResult.failure("No claim exists at this chunk.");
+            return ClaimOperationResult.failure("No claim exists with that id.");
         }
 
         Claim claim = existingClaim.get();
         if (!claim.isOwner(owner)) {
-            return ClaimOperationResult.failure("Only the claim owner can shrink this claim.");
-        }
-        if (!claim.containsChunk(targetChunk)) {
-            return ClaimOperationResult.failure("This chunk is not part of your claim.");
-        }
-        if (!ClaimChunkAdjacency.isEdgeChunk(targetChunk, claim.getChunks())) {
-            return ClaimOperationResult.failure("You can only shrink edge chunks of your claim.");
+            return ClaimOperationResult.failure("Only the claim owner can resize this claim.");
         }
 
-        if (claim.chunkCount() == 1) {
-            repository.delete(claim.getId());
-            return ClaimOperationResult.success("Claim removed.");
+        String volumeError = limitChecker.validateBox(newBox.volume());
+        if (volumeError != null) {
+            return ClaimOperationResult.failure(volumeError);
         }
 
-        Claim updatedClaim = claim.withChunkRemoved(targetChunk);
-        repository.save(updatedClaim);
-        return ClaimOperationResult.success("Claim shrunk.");
+        int blockDelta = newBox.volume() - claim.blockCount();
+        if (!limitChecker.canChangeBlocks(owner, blockDelta)) {
+            return ClaimOperationResult.failure(limitChecker.limitFailureMessage(owner, blockDelta));
+        }
+
+        List<Claim> overlapping = repository.findOverlapping(newBox, claimId);
+        if (!overlapping.isEmpty()) {
+            return ClaimOperationResult.failure("This area overlaps an existing claim.");
+        }
+
+        repository.save(claim.withBox(newBox));
+        return ClaimOperationResult.success("Claim resized.");
     }
 
-    public ClaimOperationResult deleteRegionAt(ClaimChunk chunk, UUID requester) {
-        Objects.requireNonNull(chunk, "chunk");
+    public ClaimOperationResult deleteAtBlock(String worldName, int x, int y, int z, UUID requester) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(requester, "requester");
 
-        Optional<Claim> existingClaim = repository.findByChunk(chunk);
+        Optional<Claim> existingClaim = repository.findByBlock(worldName, x, y, z);
         if (existingClaim.isEmpty()) {
-            return ClaimOperationResult.failure("No claim exists at this chunk.");
+            return ClaimOperationResult.failure("No claim exists at this location.");
         }
 
         Claim claim = existingClaim.get();
@@ -116,46 +100,46 @@ public final class ClaimService {
         return ClaimOperationResult.success("Claim deleted.");
     }
 
-    public Optional<Claim> getClaimAt(ClaimChunk chunk) {
-        Objects.requireNonNull(chunk, "chunk");
-        return repository.findByChunk(chunk);
+    public Optional<Claim> getClaimAtBlock(String worldName, int x, int y, int z) {
+        Objects.requireNonNull(worldName, "worldName");
+        return repository.findByBlock(worldName, x, y, z);
     }
 
-    public boolean canBuild(ClaimChunk chunk, UUID playerId) {
-        Objects.requireNonNull(chunk, "chunk");
+    public boolean canBuild(String worldName, int x, int y, int z, UUID playerId) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(playerId, "playerId");
 
-        return repository.findByChunk(chunk)
+        return repository.findByBlock(worldName, x, y, z)
                 .map(claim -> claim.canBuild(playerId))
                 .orElse(true);
     }
 
-    public boolean isOwner(ClaimChunk chunk, UUID playerId) {
-        Objects.requireNonNull(chunk, "chunk");
+    public boolean isOwner(String worldName, int x, int y, int z, UUID playerId) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(playerId, "playerId");
 
-        return repository.findByChunk(chunk)
+        return repository.findByBlock(worldName, x, y, z)
                 .map(claim -> claim.isOwner(playerId))
                 .orElse(false);
     }
 
-    public boolean isTrusted(ClaimChunk chunk, UUID playerId) {
-        Objects.requireNonNull(chunk, "chunk");
+    public boolean isTrusted(String worldName, int x, int y, int z, UUID playerId) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(playerId, "playerId");
 
-        return repository.findByChunk(chunk)
+        return repository.findByBlock(worldName, x, y, z)
                 .map(claim -> claim.isTrusted(playerId))
                 .orElse(false);
     }
 
-    public ClaimOperationResult trustPlayer(ClaimChunk chunk, UUID owner, UUID target) {
-        Objects.requireNonNull(chunk, "chunk");
+    public ClaimOperationResult trustPlayer(String worldName, int x, int y, int z, UUID owner, UUID target) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(owner, "owner");
         Objects.requireNonNull(target, "target");
 
-        Optional<Claim> existingClaim = repository.findByChunk(chunk);
+        Optional<Claim> existingClaim = repository.findByBlock(worldName, x, y, z);
         if (existingClaim.isEmpty()) {
-            return ClaimOperationResult.failure("No claim exists at this chunk.");
+            return ClaimOperationResult.failure("No claim exists at this location.");
         }
 
         Claim claim = existingClaim.get();
@@ -175,14 +159,14 @@ public final class ClaimService {
         return ClaimOperationResult.success("Player trusted.");
     }
 
-    public ClaimOperationResult untrustPlayer(ClaimChunk chunk, UUID owner, UUID target) {
-        Objects.requireNonNull(chunk, "chunk");
+    public ClaimOperationResult untrustPlayer(String worldName, int x, int y, int z, UUID owner, UUID target) {
+        Objects.requireNonNull(worldName, "worldName");
         Objects.requireNonNull(owner, "owner");
         Objects.requireNonNull(target, "target");
 
-        Optional<Claim> existingClaim = repository.findByChunk(chunk);
+        Optional<Claim> existingClaim = repository.findByBlock(worldName, x, y, z);
         if (existingClaim.isEmpty()) {
-            return ClaimOperationResult.failure("No claim exists at this chunk.");
+            return ClaimOperationResult.failure("No claim exists at this location.");
         }
 
         Claim claim = existingClaim.get();
@@ -199,21 +183,5 @@ public final class ClaimService {
         Claim updatedClaim = claim.untrust(target);
         repository.save(updatedClaim);
         return ClaimOperationResult.success("Player untrusted.");
-    }
-
-    private Optional<Claim> findAdjacentOwnedRegion(ClaimChunk targetChunk, UUID owner) {
-        Set<ClaimChunk> ownedChunks = new HashSet<>();
-        for (Claim claim : repository.findAllClaims()) {
-            if (claim.isOwner(owner)) {
-                ownedChunks.addAll(claim.getChunks());
-            }
-        }
-
-        Optional<ClaimChunk> adjacentOwnedChunk = ClaimChunkAdjacency.findAdjacentOwnedChunk(targetChunk, ownedChunks);
-        if (adjacentOwnedChunk.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return repository.findByChunk(adjacentOwnedChunk.get());
     }
 }
