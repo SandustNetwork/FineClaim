@@ -5,6 +5,7 @@ import com.sandustnetwork.fineclaim.claim.domain.Claim;
 import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
 import com.sandustnetwork.fineclaim.claim.util.ClaimChunkMapper;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
+import com.sandustnetwork.fineclaim.claim.visual.ClaimPreviewManager;
 import com.sandustnetwork.fineclaim.permission.FineClaimPermission;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -19,10 +20,16 @@ public final class ClaimInfoCommand implements BasicCommand {
 
     private final ClaimService claimService;
     private final PermissionChecker permissionChecker;
+    private final ClaimPreviewManager previewManager;
 
-    public ClaimInfoCommand(ClaimService claimService, PermissionChecker permissionChecker) {
+    public ClaimInfoCommand(
+            ClaimService claimService,
+            PermissionChecker permissionChecker,
+            ClaimPreviewManager previewManager
+    ) {
         this.claimService = Objects.requireNonNull(claimService, "claimService");
         this.permissionChecker = Objects.requireNonNull(permissionChecker, "permissionChecker");
+        this.previewManager = Objects.requireNonNull(previewManager, "previewManager");
     }
 
     @Override
@@ -51,15 +58,14 @@ public final class ClaimInfoCommand implements BasicCommand {
             return;
         }
 
-        ClaimChunk claimChunk = claim.getChunk();
         FineClaimMessages.sendClaimInfoPanel(
                 player,
                 FineClaimMessages.resolvePlayerName(claim.getOwner()),
-                claimChunk.worldName(),
-                claimChunk.chunkX(),
-                claimChunk.chunkZ(),
+                chunk,
+                claim.chunkCount(),
                 claim.getTrustedPlayers().size(),
                 claim.getCreatedAt()
         );
+        previewManager.showRegionBorder(player, claim);
     }
 }

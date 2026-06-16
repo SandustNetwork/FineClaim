@@ -38,7 +38,7 @@ public final class UnclaimCommand implements BasicCommand {
         }
 
         ClaimChunk chunk = ClaimChunkMapper.fromLocation(player.getLocation());
-        ClaimOperationResult result = claimService.deleteClaim(chunk, player.getUniqueId());
+        ClaimOperationResult result = claimService.deleteRegionAt(chunk, player.getUniqueId());
         ClaimCommand.sendOperationResult(player, result);
     }
 }

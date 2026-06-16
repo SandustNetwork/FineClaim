@@ -10,6 +10,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Plugin copied to the server `plugins/` folder
 - Two regular test accounts: **PlayerA**, **PlayerB**
 - One OP/admin account: **Admin**
+- Default `config.yml` limits: `MaxChunksPerMember: 16`, `MaxChunksPerServer: 10000`, `PreviewDisplaySeconds: 120`
 
 ## 1. Start server with FineClaim
 
@@ -23,28 +24,91 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 
 - Server starts without errors.
 - Console shows `FineClaim enabled`.
-- `plugins/FineClaim/` folder is created.
+- `plugins/FineClaim/` folder is created with `config.yml` and `claims.yml`.
 - No stack trace related to FineClaim.
 
-## 2. Player A runs `/claim`
+## 2. Preview claim with `/claim`
 
 **Steps**
 
 1. Join as **PlayerA**.
 2. Stand in an unclaimed chunk.
-3. Run `/claim`.
+3. Run `/claim` (no arguments).
+
+**Expected**
+
+- Message: `Preview active. Use /claim confirm or /claim cancel.`
+- Light-blue **BlockDisplay** corner markers appear at the four corners of the current chunk.
+- Running `/claiminfo` still reports: `This chunk is not claimed.` (preview does not create a claim yet).
+
+## 3. Cancel preview with `/claim cancel`
+
+**Steps**
+
+1. As **PlayerA**, with an active preview from step 2, run `/claim cancel`.
+
+**Expected**
+
+- Message: `Claim preview cancelled.`
+- BlockDisplay markers disappear.
+- Chunk remains unclaimed.
+
+## 4. Confirm claim with `/claim confirm`
+
+**Steps**
+
+1. As **PlayerA**, stand in an unclaimed chunk.
+2. Run `/claim`.
+3. Run `/claim confirm`.
 
 **Expected**
 
 - Message: `Claim created.`
-- Running `/claiminfo` in the same chunk shows **PlayerA** as owner.
+- Region border is shown for the new 1-chunk claim.
+- `/claiminfo` shows **PlayerA** as owner and **Chunks: 1**.
 
-## 3. Player B tries break / place / interact in the claim
+## 5. Expand claim with `/claim expand`
+
+**Steps**
+
+1. As **PlayerA**, move to an **adjacent unclaimed** chunk (north, east, south, or west of the existing claim).
+2. Run `/claim expand`.
+
+**Expected**
+
+- Message: `Claim expanded.`
+- Border displays update to cover both chunks.
+- `/claiminfo` in either chunk shows **Chunks: 2** and the same owner.
+
+## 6. Shrink claim with `/claim shrink`
+
+**Steps**
+
+1. As **PlayerA**, stand on an **edge chunk** of the region (a chunk with at least one unclaimed neighbor).
+2. Run `/claim shrink`.
+
+**Expected**
+
+- Message: `Claim shrunk.` (or `Claim removed.` if shrinking the last chunk).
+- Border updates to reflect the smaller region.
+- `/claiminfo` shows the reduced chunk count.
+
+**Edge case — interior chunk**
+
+1. Expand to at least 3 chunks in a row.
+2. Stand on the middle chunk and run `/claim shrink`.
+
+**Expected**
+
+- Message: `You can only shrink edge chunks of your claim.`
+- Region size unchanged.
+
+## 7. Player B tries break / place / interact in the claim
 
 **Steps**
 
 1. Join as **PlayerB**.
-2. Enter the chunk claimed by **PlayerA**.
+2. Enter a chunk claimed by **PlayerA**.
 3. Try to break a block.
 4. Try to place a block.
 5. Right-click a block (for example a chest, door, or button).
@@ -57,7 +121,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Interact is cancelled.
 - **PlayerB** receives: `You cannot do that in this claim.`
 
-## 4. Player A runs `/trust PlayerB`
+## 8. Player A runs `/trust PlayerB`
 
 **Steps**
 
@@ -69,12 +133,12 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Message: `Player trusted.`
 - `/claiminfo` shows trusted player count increased by 1.
 
-## 5. Player B tries again
+## 9. Player B tries again after trust
 
 **Steps**
 
 1. Join as **PlayerB** in the same claimed chunk.
-2. Repeat break, place, and interact tests from step 3.
+2. Repeat break, place, and interact tests from step 7.
 
 **Expected**
 
@@ -83,7 +147,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Interact succeeds.
 - No protection denial message.
 
-## 6. Player A runs `/untrust PlayerB`
+## 10. Player A runs `/untrust PlayerB`
 
 **Steps**
 
@@ -95,22 +159,69 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Message: `Player untrusted.`
 - `/claiminfo` shows trusted player count decreased.
 
-## 7. Player A runs `/claiminfo`
+## 11. Player A runs `/claiminfo`
 
 **Steps**
 
-1. As **PlayerA**, stand in the claimed chunk.
+1. As **PlayerA**, stand in any chunk of the region.
 2. Run `/claiminfo`.
 
 **Expected**
 
 - Output includes:
-  - Owner UUID matching **PlayerA**
-  - Chunk world name and chunk X/Z
+  - Owner name matching **PlayerA**
+  - Current chunk world name and chunk X/Z
+  - **Chunks:** total region size
   - Trusted players count
-  - Created-at timestamp
+  - Created-at date (`dd/MM/yyyy`)
+- Region border is displayed for all chunks in the claim.
 
-## 8. Restart server
+## 12. Unclaim entire region with `/unclaim`
+
+**Steps**
+
+1. As **PlayerA**, stand in any chunk of the region.
+2. Run `/unclaim`.
+
+**Expected**
+
+- Message: `Claim deleted.`
+- `/claiminfo` reports: `This chunk is not claimed.`
+- All chunks in the former region are unclaimed.
+
+## 13. Claim limits (`MaxChunksPerMember`)
+
+**Steps**
+
+1. Temporarily set `MaxChunksPerMember: 1` in `config.yml`.
+2. Run `/fineclaim reload` as **Admin**.
+3. As **PlayerA**, claim and confirm one chunk.
+4. Move to another unclaimed chunk and run `/claim confirm` (after preview) or `/claim expand`.
+
+**Expected**
+
+- Operation is denied with a limit message.
+- No additional chunks are added.
+
+Restore `MaxChunksPerMember` to `16` and reload when finished.
+
+## 14. Preview auto-expire
+
+**Steps**
+
+1. Temporarily set `PreviewDisplaySeconds: 5` in `config.yml`.
+2. Run `/fineclaim reload`.
+3. As **PlayerA**, run `/claim` in an unclaimed chunk.
+4. Wait at least 5 seconds without confirming.
+
+**Expected**
+
+- BlockDisplay markers disappear automatically.
+- `/claim confirm` reports: `You do not have an active claim preview.`
+
+Restore `PreviewDisplaySeconds` to `120` and reload when finished.
+
+## 15. Restart server
 
 **Steps**
 
@@ -121,22 +232,23 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 **Expected**
 
 - Server restarts without FineClaim errors.
-- Console shows claim load log from storage (for example: `Loaded 1 claim(s) from claims.yml.`).
+- Console shows claim load log from storage (for example: `Loaded N chunk(s) from claims.yml.`).
+- Legacy single-chunk entries in `claims.yml` are migrated to the v2 `chunks:` format on load.
 
-## 9. Verify claim persists after restart
+## 16. Verify claim persists after restart
 
 **Steps**
 
-1. Join as **PlayerA** and run `/claiminfo` in the same chunk.
+1. Join as **PlayerA** and run `/claiminfo` in a claimed chunk.
 2. Join as **PlayerB** and try to break a block in that chunk.
 
 **Expected**
 
-- `/claiminfo` still shows the same owner and chunk data.
+- `/claiminfo` still shows the same owner, region size, and chunk data.
 - **PlayerB** is blocked again with `You cannot do that in this claim.`
-- Trusted list matches state before restart (PlayerB untrusted if step 6 was completed).
+- Trusted list matches state before restart.
 
-## 10. Test OP / admin bypass
+## 17. Test OP / admin bypass
 
 **Steps**
 
@@ -150,7 +262,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - No protection denial message.
 - Admin can inspect any claim with `/claiminfo` even when not owner/trusted.
 
-## 11. Test command permission deny
+## 18. Test command permission deny
 
 **Steps**
 
@@ -164,7 +276,19 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Player receives: `You do not have permission to use this command.`
 - No claim changes occur when `/claim` is denied.
 
+## 19. Test `/fineclaim reload`
+
+**Steps**
+
+1. As **Admin**, edit `config.yml` (for example change `BorderBlock`).
+2. Run `/fineclaim reload`.
+
+**Expected**
+
+- Message confirms config and claims were reloaded.
+- New settings apply to subsequent previews and borders.
+
 ## Optional cleanup
 
-- Run `/unclaim` as **PlayerA** to remove the test claim.
+- Run `/unclaim` as **PlayerA** on each region to remove test claims.
 - Confirm `/claiminfo` reports: `This chunk is not claimed.`

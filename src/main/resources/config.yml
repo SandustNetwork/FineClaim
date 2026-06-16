@@ -1,2 +1,4 @@
-# FineClaim configuration
-# Claim settings will be added here in a future release.
+MaxChunksPerMember: 16
+MaxChunksPerServer: 10000
+PreviewDisplaySeconds: 120
+BorderBlock: LIGHT_BLUE_STAINED_GLASS

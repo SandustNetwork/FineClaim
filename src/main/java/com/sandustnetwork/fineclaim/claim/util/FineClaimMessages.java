@@ -1,5 +1,6 @@
 package com.sandustnetwork.fineclaim.claim.util;
 
+import com.sandustnetwork.fineclaim.claim.domain.ClaimChunk;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
@@ -65,15 +66,14 @@ public final class FineClaimMessages {
     public static void sendClaimInfoPanel(
             Player player,
             String ownerName,
-            String worldName,
-            int chunkX,
-            int chunkZ,
+            ClaimChunk currentChunk,
+            int regionChunkCount,
             int trustedCount,
             Instant createdAt
     ) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(ownerName, "ownerName");
-        Objects.requireNonNull(worldName, "worldName");
+        Objects.requireNonNull(currentChunk, "currentChunk");
         Objects.requireNonNull(createdAt, "createdAt");
 
         sendStrikethroughSeparator(player);
@@ -83,7 +83,9 @@ public final class FineClaimMessages {
         ));
         sendStrikethroughSeparator(player);
         sendClaimInfoRow(player, "Owner", ownerName);
-        sendClaimInfoRow(player, "Chunk", worldName + " (" + chunkX + ", " + chunkZ + ")");
+        sendClaimInfoRow(player, "Chunk", currentChunk.worldName()
+                + " (" + currentChunk.chunkX() + ", " + currentChunk.chunkZ() + ")");
+        sendClaimInfoRow(player, "Region size", regionChunkCount + " chunk(s)");
         sendClaimInfoRow(player, "Trusted", formatTrustedCount(trustedCount));
         sendClaimInfoRow(player, "Created", formatCreatedAt(createdAt));
         sendStrikethroughSeparator(player);
