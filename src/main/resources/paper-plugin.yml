@@ -1,0 +1,44 @@
+name: FineClaim
+version: '${version}'
+main: com.sandustnetwork.fineclaim.FineClaimPlugin
+description: A lightweight land claim plugin for Paper/Folia servers.
+api-version: '1.21'
+folia-supported: true
+commands:
+  claim:
+    description: Claim the chunk you are standing in
+    usage: /claim
+  unclaim:
+    description: Remove your claim from the current chunk
+    usage: /unclaim
+  trust:
+    description: Trust a player to build in your current chunk claim
+    usage: /trust <player>
+  untrust:
+    description: Remove build trust from a player in your current chunk claim
+    usage: /untrust <player>
+  claiminfo:
+    description: Show claim information for the current chunk
+    usage: /claiminfo
+permissions:
+  fineclaim.command.claim:
+    description: Allows claiming chunks
+    default: true
+  fineclaim.command.unclaim:
+    description: Allows unclaiming chunks
+    default: true
+  fineclaim.command.trust:
+    description: Allows trusting players in a claim
+    default: true
+  fineclaim.command.untrust:
+    description: Allows untrusting players in a claim
+    default: true
+  fineclaim.command.info:
+    description: Allows viewing claim information
+    default: true
+  fineclaim.admin.bypass:
+    description: Bypass claim protection
+    default: op
+  fineclaim.admin.info:
+    description: View any claim information
+    default: op
