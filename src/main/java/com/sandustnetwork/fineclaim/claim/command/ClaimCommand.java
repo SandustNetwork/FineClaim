@@ -6,7 +6,6 @@ import com.sandustnetwork.fineclaim.claim.domain.Claim;
 import com.sandustnetwork.fineclaim.claim.domain.ClaimBox;
 import com.sandustnetwork.fineclaim.claim.util.ClaimLocationMapper;
 import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
-import com.sandustnetwork.fineclaim.claim.visual.ClaimPreviewManager;
 import com.sandustnetwork.fineclaim.claim.wand.ClaimWandManager;
 import com.sandustnetwork.fineclaim.permission.FineClaimPermission;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
@@ -31,18 +30,15 @@ public final class ClaimCommand implements BasicCommand {
     private final ClaimService claimService;
     private final PermissionChecker permissionChecker;
     private final ClaimWandManager wandManager;
-    private final ClaimPreviewManager previewManager;
 
     public ClaimCommand(
             ClaimService claimService,
             PermissionChecker permissionChecker,
-            ClaimWandManager wandManager,
-            ClaimPreviewManager previewManager
+            ClaimWandManager wandManager
     ) {
         this.claimService = Objects.requireNonNull(claimService, "claimService");
         this.permissionChecker = Objects.requireNonNull(permissionChecker, "permissionChecker");
         this.wandManager = Objects.requireNonNull(wandManager, "wandManager");
-        this.previewManager = Objects.requireNonNull(previewManager, "previewManager");
     }
 
     @Override
@@ -153,12 +149,6 @@ public final class ClaimCommand implements BasicCommand {
         ClaimOperationResult result = claimService.createFromBox(selectedBox.get(), player.getUniqueId());
         if (result.success()) {
             wandManager.endSession(player);
-            claimService.getClaimAtBlock(
-                    selectedBox.get().worldName(),
-                    selectedBox.get().minX(),
-                    selectedBox.get().minY(),
-                    selectedBox.get().minZ()
-            ).ifPresent(claim -> previewManager.showClaimBorder(player, claim));
         }
         sendOperationResult(player, result);
     }
@@ -230,12 +220,6 @@ public final class ClaimCommand implements BasicCommand {
         );
         if (result.success()) {
             wandManager.endSession(player);
-            claimService.getClaimAtBlock(
-                    selectedBox.get().worldName(),
-                    selectedBox.get().minX(),
-                    selectedBox.get().minY(),
-                    selectedBox.get().minZ()
-            ).ifPresent(claim -> previewManager.showClaimBorder(player, claim));
         }
         sendOperationResult(player, result);
     }

@@ -13,6 +13,7 @@ public final class ClaimSettings {
     private final int maxBlocksPerMember;
     private final int maxBlocksPerServer;
     private final int previewDisplaySeconds;
+    private final int claimInfoBorderSeconds;
     private final Particle cornerParticle;
     private final BorderColorPalette borderColorPalette;
     private final double particleSpacing;
@@ -25,6 +26,7 @@ public final class ClaimSettings {
             int maxBlocksPerMember,
             int maxBlocksPerServer,
             int previewDisplaySeconds,
+            int claimInfoBorderSeconds,
             Particle cornerParticle,
             BorderColorPalette borderColorPalette,
             double particleSpacing,
@@ -42,6 +44,9 @@ public final class ClaimSettings {
         if (previewDisplaySeconds <= 0) {
             throw new IllegalArgumentException("PreviewDisplaySeconds must be positive");
         }
+        if (claimInfoBorderSeconds <= 0) {
+            throw new IllegalArgumentException("ClaimInfoBorderSeconds must be positive");
+        }
         if (particleSpacing <= 0) {
             throw new IllegalArgumentException("ParticleSpacing must be positive");
         }
@@ -57,6 +62,7 @@ public final class ClaimSettings {
         this.maxBlocksPerMember = maxBlocksPerMember;
         this.maxBlocksPerServer = maxBlocksPerServer;
         this.previewDisplaySeconds = previewDisplaySeconds;
+        this.claimInfoBorderSeconds = claimInfoBorderSeconds;
         this.cornerParticle = Objects.requireNonNull(cornerParticle, "cornerParticle");
         this.borderColorPalette = Objects.requireNonNull(borderColorPalette, "borderColorPalette");
         this.particleSpacing = particleSpacing;
@@ -73,6 +79,7 @@ public final class ClaimSettings {
         int maxBlocksPerMember = resolveMaxBlocksPerMember(config);
         int maxBlocksPerServer = resolveMaxBlocksPerServer(config);
         int previewDisplaySeconds = config.getInt("PreviewDisplaySeconds", 120);
+        int claimInfoBorderSeconds = config.getInt("ClaimInfoBorderSeconds", 10);
         String cornerParticleName = config.getString("CornerParticle", "END_ROD");
         if (cornerParticleName == null && config.contains("BorderParticle")) {
             cornerParticleName = config.getString("BorderParticle", "END_ROD");
@@ -89,6 +96,7 @@ public final class ClaimSettings {
                 maxBlocksPerMember,
                 maxBlocksPerServer,
                 previewDisplaySeconds,
+                claimInfoBorderSeconds,
                 cornerParticle,
                 borderColorPalette,
                 particleSpacing,
@@ -140,6 +148,10 @@ public final class ClaimSettings {
 
     public int previewDisplaySeconds() {
         return previewDisplaySeconds;
+    }
+
+    public int claimInfoBorderSeconds() {
+        return claimInfoBorderSeconds;
     }
 
     public Particle cornerParticle() {

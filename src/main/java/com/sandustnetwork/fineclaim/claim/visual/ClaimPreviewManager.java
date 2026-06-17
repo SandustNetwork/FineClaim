@@ -43,7 +43,7 @@ public final class ClaimPreviewManager implements Listener {
         Objects.requireNonNull(box, "box");
 
         stopPreview(player);
-        PreviewSession session = startAnimation(player, box);
+        PreviewSession session = startAnimation(player, box, settings.previewDisplaySeconds());
         previewSessions.put(player.getUniqueId(), session);
     }
 
@@ -65,9 +65,9 @@ public final class ClaimPreviewManager implements Listener {
         Objects.requireNonNull(claim, "claim");
 
         stopPreview(player);
-        PreviewSession session = startAnimation(player, claim.getBox());
+        PreviewSession session = startAnimation(player, claim.getBox(), settings.claimInfoBorderSeconds());
         previewSessions.put(player.getUniqueId(), session);
-        FineClaimMessages.sendInfo(player, "Claim border shown.");
+        FineClaimMessages.sendInfo(player, "Claim border shown for " + settings.claimInfoBorderSeconds() + "s.");
     }
 
     public void cleanupAll() {
@@ -91,7 +91,7 @@ public final class ClaimPreviewManager implements Listener {
         stopPreview(event.getPlayer());
     }
 
-    private PreviewSession startAnimation(Player player, ClaimBox box) {
+    private PreviewSession startAnimation(Player player, ClaimBox box, int displaySeconds) {
         ClaimSettings activeSettings = settings;
         PreviewSession[] sessionHolder = new PreviewSession[1];
 
@@ -113,7 +113,7 @@ public final class ClaimPreviewManager implements Listener {
                 plugin,
                 scheduledTask -> stopPreview(player),
                 null,
-                activeSettings.previewDisplaySeconds() * 20L
+                displaySeconds * 20L
         );
 
         PreviewSession session = new PreviewSession(box, animationTask, expiryTask);

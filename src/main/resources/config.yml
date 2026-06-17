@@ -1,6 +1,7 @@
 MaxBlocksPerMember: 4096
 MaxBlocksPerServer: 2500000
 PreviewDisplaySeconds: 120
+ClaimInfoBorderSeconds: 10
 CornerParticle: END_ROD
 BorderColors:
   - "#00B4FC"

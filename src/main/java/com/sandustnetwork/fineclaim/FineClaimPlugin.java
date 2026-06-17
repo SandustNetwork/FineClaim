@@ -59,8 +59,7 @@ public final class FineClaimPlugin extends JavaPlugin {
         registerCommand("claim", "Claim and manage your land", new ClaimCommand(
                 claimService,
                 permissionChecker,
-                wandManager,
-                previewManager
+                wandManager
         ));
         registerCommand("unclaim", "Remove your claim from your current location", new UnclaimCommand(claimService, permissionChecker));
         registerCommand("trust", "Trust a player to build in your current claim", new TrustCommand(claimService, permissionChecker));
