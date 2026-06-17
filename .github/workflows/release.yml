@@ -27,9 +27,6 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -89,23 +86,43 @@ jobs:
   publish:
     needs: [prepare, build]
     runs-on: ubuntu-latest
-    env:
-      MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Validate publish configuration
+      - name: Resolve Modrinth project id
+        id: modrinth
+        env:
+          MODRINTH_PROJECT_ID_VAR: ${{ vars.MODRINTH_PROJECT_ID }}
+          MODRINTH_PROJECT_ID_SECRET: ${{ secrets.MODRINTH_PROJECT_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
-          if [[ -z "$MODRINTH_PROJECT_ID" ]]; then
-            echo "Repository variable MODRINTH_PROJECT_ID is required for Modrinth publishing." >&2
+          if [[ -n "$MODRINTH_PROJECT_ID_VAR" ]]; then
+            echo "id=$MODRINTH_PROJECT_ID_VAR" >> "$GITHUB_OUTPUT"
+            echo "source=repository variable MODRINTH_PROJECT_ID" >> "$GITHUB_OUTPUT"
+          elif [[ -n "$MODRINTH_PROJECT_ID_SECRET" ]]; then
+            echo "id=$MODRINTH_PROJECT_ID_SECRET" >> "$GITHUB_OUTPUT"
+            echo "source=repository secret MODRINTH_PROJECT_ID (fallback)" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -z "$(grep '^id=' "$GITHUB_OUTPUT" || true)" ]]; then
+            echo "::error::Modrinth project id is missing."
+            echo "Add a repository Actions VARIABLE named MODRINTH_PROJECT_ID at:"
+            echo "  Settings → Secrets and variables → Actions → Variables → New repository variable"
+            echo "Do not use the Secrets tab unless you also add secret MODRINTH_PROJECT_ID."
+            echo "If using an organization variable, grant this repository access to it."
             exit 1
           fi
-          if [[ -z "${{ secrets.MODRINTH_TOKEN }}" ]]; then
-            echo "Secret MODRINTH_TOKEN is required for Modrinth publishing." >&2
+
+          if [[ -z "$MODRINTH_TOKEN" ]]; then
+            echo "::error::Secret MODRINTH_TOKEN is required for Modrinth publishing."
+            echo "Create a PAT at https://modrinth.com/settings/pats with VERSION_CREATE scope,"
+            echo "then add it under Settings → Secrets and variables → Actions → Secrets."
             exit 1
           fi
+
+          echo "Using Modrinth project id from $(grep '^source=' "$GITHUB_OUTPUT" | cut -d= -f2-)"
 
       - name: Download built JARs
         uses: actions/download-artifact@v4
@@ -139,7 +156,7 @@ jobs:
           github-draft: false
           github-prerelease: ${{ needs.prepare.outputs.version-type != 'release' }}
 
-          modrinth-id: ${{ env.MODRINTH_PROJECT_ID }}
+          modrinth-id: ${{ steps.modrinth.outputs.id }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-featured: ${{ needs.prepare.outputs.version-type == 'release' }}
           modrinth-unfeature-mode: subset

@@ -29,11 +29,16 @@ Advertised game versions on Modrinth/GitHub (includes `1.21.2`, which shares com
 
 Create a token at https://modrinth.com/settings/personal-access-tokens
 
-### Variables (Settings → Secrets and variables → Actions → Variables)
+### Variables (Settings → Secrets and variables → Actions → **Variables** tab)
 
 | Variable | Example | Purpose |
 |---|---|---|
-| `MODRINTH_PROJECT_ID` | `abcd1234` | Modrinth project slug or ID for FineClaim |
+| `MODRINTH_PROJECT_ID` | `fineclaim` or `Ab12Cd34` | Modrinth project slug or 8-character project ID |
+
+Use the **Variables** tab, not Secrets. GitHub Actions reads this via `vars.MODRINTH_PROJECT_ID`.
+If you already created it as a Secret by mistake, either move it to Variables or add the same name under Secrets (the workflow accepts both).
+
+If the variable is defined at **organization** level, open the variable and allow access for the `FineClaim` repository.
 
 Create the Modrinth project first (type: **Plugin**, loaders: **Paper** + **Folia**).
 
