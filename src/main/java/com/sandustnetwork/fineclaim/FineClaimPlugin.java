@@ -51,7 +51,7 @@ public final class FineClaimPlugin extends JavaPlugin {
         previewManager = new ClaimPreviewManager(this, borderDisplay, settings);
         wandManager = new ClaimWandManager(this, previewManager);
 
-        registerCommand("claim", "Claim and manage your land", new ClaimCommand(
+        PaperCommandRegistration.register(this, "claim", "Claim and manage your land", new ClaimCommand(
                 this,
                 claimService,
                 permissionChecker,
