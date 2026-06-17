@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      mc-versions: ${{ steps.matrix.outputs.mc-versions }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Minecraft version matrix
+        id: matrix
+        run: bash .github/scripts/prepare-matrix.sh
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mc-version: ${{ fromJSON(needs.prepare.outputs.mc-versions) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build for Minecraft ${{ matrix.mc-version }}
+        run: ./gradlew build --no-daemon -PmcVersion=${{ matrix.mc-version }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fineclaim-mc${{ matrix.mc-version }}
+          path: build/libs/FineClaim-*-mc${{ matrix.mc-version }}.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: All matrix builds succeeded
+        run: echo "FineClaim builds passed for all configured Folia/Paper versions."

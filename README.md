@@ -1,5 +1,6 @@
 # FineClaim
 
+[![CI](https://github.com/SandustNetwork/FineClaim/actions/workflows/ci.yml/badge.svg)](https://github.com/SandustNetwork/FineClaim/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 A lightweight **3D box land claim** plugin for **Folia** and Paper (Minecraft 1.21.x).
@@ -146,7 +147,9 @@ Linux/macOS:
 ./gradlew build
 ```
 
-Output JAR: `build/libs/FineClaim-*.jar`
+Output JAR: `build/libs/FineClaim-<version>-mc<game>.jar`
+
+Multi-version release builds are documented in [docs/CI-CD.md](docs/CI-CD.md).
 
 ## Local testing
 
