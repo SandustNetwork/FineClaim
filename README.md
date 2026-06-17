@@ -18,7 +18,7 @@ Repository: https://github.com/SandustNetwork/FineClaim
 - **Trust system** — per-claim trust for build access
 - **Folia-safe** — region-aware schedulers; no global `BukkitScheduler`
 - **YAML persistence** — `plugins/FineClaim/claims.yml` with automatic migration from older formats
-- **Tab completion** — `/claim` and `/fineclaim` subcommand suggestions via Paper `BasicCommand`
+- **Tab completion** — `/claim` subcommand suggestions via Paper `BasicCommand`
 
 ## Requirements
 
@@ -30,7 +30,7 @@ Repository: https://github.com/SandustNetwork/FineClaim
 1. Build the plugin (see [Build](#build)) or download a release JAR.
 2. Copy `FineClaim-*.jar` into your server's `plugins/` folder.
 3. Start the server once to generate `plugins/FineClaim/config.yml`.
-4. Restart or run `/fineclaim reload` after editing config.
+4. Restart or run `/claim reload` after editing config.
 
 ## Commands
 
@@ -42,13 +42,13 @@ Repository: https://github.com/SandustNetwork/FineClaim
 | `/claim resize` | Start resize mode in an owned claim (re-select A/B) |
 | `/claim resize confirm` | Apply the resized box |
 | `/claim resize cancel` | Cancel resize |
-| `/unclaim` | Delete the claim box at your location |
-| `/trust <player>` | Trust a player in the claim at your location |
-| `/untrust <player>` | Remove trust |
-| `/claiminfo` | Show claim panel and border preview |
-| `/fineclaim reload` | Reload `config.yml` and `claims.yml` (admin) |
+| `/claim info` | Show claim panel and border preview |
+| `/claim unclaim` | Delete the claim box at your location |
+| `/claim trust <player>` | Trust a player in the claim at your location |
+| `/claim untrust <player>` | Remove trust |
+| `/claim reload` | Reload `config.yml` and `claims.yml` (admin) |
 
-Press **Tab** after `/claim` or `/claim resize` for subcommand suggestions.
+Press **Tab** after `/claim` for subcommand suggestions.
 
 ## Claim tool
 
@@ -65,14 +65,14 @@ The tool is removed automatically on confirm, cancel, quit, or preview expiry.
 
 | Node | Default | Description |
 |---|---|---|
-| `fineclaim.command.claim` | `true` | Use `/claim` and subcommands |
-| `fineclaim.command.unclaim` | `true` | Use `/unclaim` |
-| `fineclaim.command.trust` | `true` | Use `/trust` |
-| `fineclaim.command.untrust` | `true` | Use `/untrust` |
-| `fineclaim.command.info` | `true` | Use `/claiminfo` |
+| `fineclaim.command.claim` | `true` | Use `/claim` (selection, confirm, cancel, resize) |
+| `fineclaim.command.unclaim` | `true` | Use `/claim unclaim` |
+| `fineclaim.command.trust` | `true` | Use `/claim trust` |
+| `fineclaim.command.untrust` | `true` | Use `/claim untrust` |
+| `fineclaim.command.info` | `true` | Use `/claim info` |
 | `fineclaim.admin.bypass` | `op` | Bypass claim protection |
-| `fineclaim.admin.info` | `op` | View any claim with `/claiminfo` |
-| `fineclaim.admin.reload` | `op` | Use `/fineclaim reload` |
+| `fineclaim.admin.info` | `op` | View any claim with `/claim info` |
+| `fineclaim.admin.reload` | `op` | Use `/claim reload` |
 
 ## Configuration
 

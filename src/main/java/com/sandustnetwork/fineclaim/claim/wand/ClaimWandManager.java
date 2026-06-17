@@ -54,7 +54,7 @@ public final class ClaimWandManager implements Listener {
         endSession(player);
         sessions.put(player.getUniqueId(), new WandSession(Mode.CREATE, null, null, null));
         giveWand(player);
-        FineClaimMessages.sendInfo(player, "Claim tool equipped. Left-click (break) a block for point A, right-click for point B.");
+        FineClaimMessages.sendInfo(player, "Claim tool equipped. Left-click a block for point A, right-click for point B.");
         FineClaimMessages.sendInfo(player, "Use /claim confirm or /claim cancel when finished.");
     }
 

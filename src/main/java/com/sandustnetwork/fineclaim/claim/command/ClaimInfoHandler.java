@@ -8,21 +8,18 @@ import com.sandustnetwork.fineclaim.claim.util.FineClaimMessages;
 import com.sandustnetwork.fineclaim.claim.visual.ClaimPreviewManager;
 import com.sandustnetwork.fineclaim.permission.FineClaimPermission;
 import com.sandustnetwork.fineclaim.permission.PermissionChecker;
-import io.papermc.paper.command.brigadier.BasicCommand;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Objects;
 import java.util.Optional;
 
-public final class ClaimInfoCommand implements BasicCommand {
+final class ClaimInfoHandler {
 
     private final ClaimService claimService;
     private final PermissionChecker permissionChecker;
     private final ClaimPreviewManager previewManager;
 
-    public ClaimInfoCommand(
+    ClaimInfoHandler(
             ClaimService claimService,
             PermissionChecker permissionChecker,
             ClaimPreviewManager previewManager
@@ -32,14 +29,7 @@ public final class ClaimInfoCommand implements BasicCommand {
         this.previewManager = Objects.requireNonNull(previewManager, "previewManager");
     }
 
-    @Override
-    public void execute(CommandSourceStack source, String[] args) {
-        CommandSender sender = source.getSender();
-        if (!(sender instanceof Player player)) {
-            FineClaimMessages.sendError(sender, "This command can only be used by players.");
-            return;
-        }
-
+    void handle(Player player) {
         if (!permissionChecker.hasPermission(player, FineClaimPermission.COMMAND_INFO)) {
             FineClaimMessages.sendError(player, "You do not have permission to use this command.");
             return;

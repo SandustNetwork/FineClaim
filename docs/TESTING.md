@@ -53,7 +53,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 
 - Messages confirm point A and point B coordinates.
 - Particle markers appear at the 8 box corners, with `END_ROD` lines connecting the edges.
-- `/claiminfo` still reports location is not claimed until confirm.
+- `/claim info` still reports location is not claimed until confirm.
 
 ## 4. Cancel selection with `/claim cancel`
 
@@ -79,8 +79,8 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 
 - Message: `Claim created.`
 - Claim Wand is removed.
-- Box border is shown briefly.
-- `/claiminfo` inside the box shows owner **PlayerA**, block count, and size.
+- Preview border disappears immediately.
+- `/claim info` inside the box shows owner **PlayerA**, block count, and size.
 
 ## 6. Tab completion for `/claim`
 
@@ -91,7 +91,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 
 **Expected**
 
-- First level suggests: `confirm`, `cancel`, `resize`.
+- First level suggests subcommands such as `confirm`, `cancel`, `resize`, `info`, `trust`, `untrust`, `unclaim`, and `reload` (based on permissions).
 - After `resize`, suggests: `confirm`, `cancel`.
 
 ## 7. Player B tries break / place / interact in the claim
@@ -107,17 +107,17 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 - Actions are cancelled for **PlayerB**.
 - Message: `You cannot do that in this claim.`
 
-## 8. Player A runs `/trust PlayerB`
+## 8. Player A runs `/claim trust PlayerB`
 
 **Steps**
 
 1. As **PlayerA**, stand inside the claim.
-2. Run `/trust PlayerB`.
+2. Run `/claim trust PlayerB`.
 
 **Expected**
 
 - Message: `Player trusted.`
-- `/claiminfo` shows trusted count increased.
+- `/claim info` shows trusted count increased.
 
 ## 9. Player B tries again after trust
 
@@ -142,8 +142,8 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 **Expected**
 
 - Message: `Claim resized.`
-- `/claiminfo` shows updated size and block count.
-- New box border preview appears.
+- `/claim info` shows updated size and block count.
+- Preview border disappears after confirm.
 
 ## 11. Cancel resize with `/claim resize cancel`
 
@@ -162,7 +162,7 @@ Use this checklist on a **Folia 1.21.x** test server with at least two non-OP pl
 **Steps**
 
 1. Set `MaxBlocksPerMember: 100` in `config.yml`.
-2. Run `/fineclaim reload` as **Admin**.
+2. Run `/claim reload` as **Admin**.
 3. Try to confirm a box larger than 100 blocks.
 
 **Expected**
@@ -200,7 +200,7 @@ Restore `MaxBlocksPerMember` when finished.
 **Steps**
 
 1. Stop and restart the server.
-2. As **PlayerA**, run `/claiminfo` inside the claim.
+2. As **PlayerA**, run `/claim info` inside the claim.
 3. As **PlayerB**, try to break a block inside the claim.
 
 **Expected**
@@ -218,20 +218,20 @@ Restore `MaxBlocksPerMember` when finished.
 **Expected**
 
 - All actions succeed.
-- `/claiminfo` works for admin.
+- `/claim info` works for admin.
 
-## 17. Test `/fineclaim reload`
+## 17. Test `/claim reload`
 
 **Steps**
 
-1. As **Admin**, run `/fineclaim reload`.
+1. As **Admin**, run `/claim reload`.
 
 **Expected**
 
 - Success message with loaded block count.
-- Tab on `/fineclaim ` suggests `reload`.
+- Tab on `/claim ` suggests `reload` (for admins).
 
 ## Optional cleanup
 
-- Run `/unclaim` as **PlayerA** inside the claim to remove it.
-- Confirm `/claiminfo` reports location is not claimed.
+- Run `/claim unclaim` as **PlayerA** inside the claim to remove it.
+- Confirm `/claim info` reports location is not claimed.

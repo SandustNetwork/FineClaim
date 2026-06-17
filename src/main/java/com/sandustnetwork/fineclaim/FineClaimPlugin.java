@@ -2,11 +2,6 @@ package com.sandustnetwork.fineclaim;
 
 import com.sandustnetwork.fineclaim.claim.application.ClaimService;
 import com.sandustnetwork.fineclaim.claim.command.ClaimCommand;
-import com.sandustnetwork.fineclaim.claim.command.ClaimInfoCommand;
-import com.sandustnetwork.fineclaim.claim.command.FineClaimAdminCommand;
-import com.sandustnetwork.fineclaim.claim.command.TrustCommand;
-import com.sandustnetwork.fineclaim.claim.command.UnclaimCommand;
-import com.sandustnetwork.fineclaim.claim.command.UntrustCommand;
 import com.sandustnetwork.fineclaim.claim.config.ClaimLimitChecker;
 import com.sandustnetwork.fineclaim.claim.config.ClaimSettings;
 import com.sandustnetwork.fineclaim.claim.protection.ClaimProtectionListener;
@@ -57,15 +52,14 @@ public final class FineClaimPlugin extends JavaPlugin {
         wandManager = new ClaimWandManager(this, previewManager);
 
         registerCommand("claim", "Claim and manage your land", new ClaimCommand(
+                this,
                 claimService,
                 permissionChecker,
-                wandManager
+                wandManager,
+                claimRepository,
+                limitChecker,
+                previewManager
         ));
-        registerCommand("unclaim", "Remove your claim from your current location", new UnclaimCommand(claimService, permissionChecker));
-        registerCommand("trust", "Trust a player to build in your current claim", new TrustCommand(claimService, permissionChecker));
-        registerCommand("untrust", "Remove build trust from a player in your current claim", new UntrustCommand(claimService, permissionChecker));
-        registerCommand("claiminfo", "Show claim information for your current location", new ClaimInfoCommand(claimService, permissionChecker, previewManager));
-        registerCommand("fineclaim", "FineClaim admin commands", new FineClaimAdminCommand(this, claimRepository, limitChecker, previewManager));
 
         ProtectionCheck protectionCheck = new ProtectionCheck(claimService, permissionChecker);
         getServer().getPluginManager().registerEvents(new ClaimProtectionListener(protectionCheck), this);
